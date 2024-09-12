@@ -5,7 +5,9 @@ import sys
 # Variables
 HOST = "localhost"
 PORT = "11434"
-MODEL = "llama2"
+
+# Model must be either orca-mini, llama2 or alfred
+MODEL = "alfred"
 
 # Check if a prompt is provided as an argument
 if len(sys.argv) < 2:
