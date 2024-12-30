@@ -7,7 +7,7 @@ HOST = "localhost"
 PORT = "11434"
 
 # Model must be either orca-mini, llama2 or alfred
-MODEL = "llama3.2:3b"
+MODEL = "llama3.2:prospector"
 
 # Check if a prompt is provided as an argument
 if len(sys.argv) < 2:
