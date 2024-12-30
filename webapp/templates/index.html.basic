@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #chatbox {
+            width: 100%;
+            height: 300px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            overflow-y: auto;
+        }
+        #chatbox div {
+            margin-bottom: 10px;
+        }
+        #user-input {
+            width: 80%;
+            padding: 10px;
+            margin-right: 5px;
+        }
+        #send-btn {
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>AI Chatbot</h1>
+    <div id="chatbox"></div>
+    <input type="text" id="user-input" placeholder="Type your message here..." />
+    <button id="send-btn">Send</button>
+
+    <script>
+        const chatbox = document.getElementById('chatbox');
+        const userInput = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+
+        function addMessage(author, text) {
+            const message = document.createElement('div');
+            message.innerHTML = `<strong>${author}:</strong> ${text}`;
+            chatbox.appendChild(message);
+            chatbox.scrollTop = chatbox.scrollHeight;
+        }
+
+        sendBtn.addEventListener('click', async () => {
+            const prompt = userInput.value.trim();
+            if (!prompt) return;
+
+            addMessage('You', prompt);
+            userInput.value = '';
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt })
+                });
+
+                const data = await response.json();
+                if (data.response) {
+                    addMessage('Bot', data.response);
+                } else if (data.error) {
+                    addMessage('Error', data.error);
+                }
+            } catch (err) {
+                addMessage('Error', 'Failed to connect to server.');
+            }
+        });
+    </script>
+</body>
+</html>
