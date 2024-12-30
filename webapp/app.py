@@ -6,7 +6,10 @@ app = Flask(__name__)
 # Variables
 HOST = "localhost"
 PORT = "11434"
-MODEL = "llama3.2:prospector"
+MODEL = "prospector:latest"
+
+# API URL to reload the model
+CREATE_API_URL = f"http://{HOST}:{PORT}/api/create"
 
 # Route for the home page
 @app.route('/')
@@ -21,7 +24,7 @@ def chat():
     if not user_input:
         return jsonify({"error": "Prompt is required"}), 400
 
-    # API URL
+    # API URL for chat generation
     url = f"http://{HOST}:{PORT}/api/generate"
     data = {
         "model": MODEL,
@@ -38,6 +41,26 @@ def chat():
             return jsonify({"response": result})
         else:
             return jsonify({"error": f"Ollama error: {response.status_code} - {response.text}"}), response.status_code
+    except Exception as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
+# Route to reload the model
+@app.route('/reload-model', methods=['POST'])
+def reload_model():
+    # Data for reloading the model
+    model_data = {
+        "model": "prospector",
+        "path": "/root/models/Modelfile"
+    }
+
+    try:
+        # Make the request to reload the model
+        response = requests.post(CREATE_API_URL, json=model_data)
+
+        if response.status_code == 200:
+            return jsonify({"message": "Model reloaded successfully."})
+        else:
+            return jsonify({"error": f"Failed to reload model: {response.status_code} - {response.text}"}), response.status_code
     except Exception as e:
         return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 

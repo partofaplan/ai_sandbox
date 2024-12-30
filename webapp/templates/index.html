@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zachbot</title>
+    <title>AI Chatbot</title>
     <style>
         * {
             box-sizing: border-box;
@@ -34,7 +34,7 @@
         }
 
         .chat-header {
-            background-color: #4665ad;
+            background-color: #4CAF50;
             color: white;
             padding: 15px;
             text-align: center;
@@ -76,7 +76,7 @@
             padding: 15px;
             border: none;
             outline: none;
-            font-size: 18px;
+            font-size: 16px;
         }
 
         .chat-input button {
@@ -92,15 +92,39 @@
         .chat-input button:hover {
             background-color: #45a049;
         }
+
+        .reload-button-container {
+            padding: 10px;
+            text-align: center;
+            border-top: 1px solid #ddd;
+        }
+
+        .reload-button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .reload-button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
     <div class="chat-container">
-        <div class="chat-header">Zachbot</div>
+        <div class="chat-header">AI Chatbot</div>
         <div id="chat-box" class="chat-box"></div>
         <div class="chat-input">
             <input type="text" id="user-input" placeholder="Type your message..." />
             <button id="send-btn">Send</button>
+        </div>
+        <div class="reload-button-container">
+            <button id="reload-btn" class="reload-button">Reload Model</button>
         </div>
     </div>
 
@@ -108,6 +132,7 @@
         const chatBox = document.getElementById('chat-box');
         const userInput = document.getElementById('user-input');
         const sendBtn = document.getElementById('send-btn');
+        const reloadBtn = document.getElementById('reload-btn');
 
         function addMessage(author, text, isBot = false) {
             const message = document.createElement('div');
@@ -144,6 +169,23 @@
 
         userInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendBtn.click();
+        });
+
+        reloadBtn.addEventListener('click', async () => {
+            try {
+                const response = await fetch('/reload-model', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+                if (data.message) {
+                    addMessage('System', data.message, true);
+                } else if (data.error) {
+                    addMessage('Error', data.error, true);
+                }
+            } catch (err) {
+                addMessage('Error', 'Failed to reload model.', true);
+            }
         });
     </script>
 </body>
