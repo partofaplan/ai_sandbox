@@ -8,8 +8,8 @@ app = Flask(__name__)
 # Variables
 HOST = "localhost"
 PORT = "11434"
-MODEL = "prospector"
-TIMEOUT = 5  # seconds for API calls
+MODEL = "prospector:latest"
+TIMEOUT = 300  # seconds for API calls
 
 # API URL to reload the model
 CREATE_API_URL = f"http://{HOST}:{PORT}/api/create"
