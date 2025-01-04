@@ -137,7 +137,11 @@
         function addMessage(author, text, isBot = false) {
             const message = document.createElement('div');
             message.classList.add('message', isBot ? 'bot' : 'user');
-            message.innerHTML = `<strong>${author}:</strong> ${text}`;
+
+            // Split text by newline characters and wrap each line in a <p> tag
+            const formattedText = text.split('\n').map(line => `<p>${line}</p>`).join('');
+
+            message.innerHTML = `<strong>${author}:</strong> ${formattedText}`;
             chatBox.appendChild(message);
             chatBox.scrollTop = chatBox.scrollHeight;
         }
