@@ -10,7 +10,9 @@ spec:
   template:
     metadata:
       labels:
-        name: ollama
+        name: ollama    
+      annotations:
+        checksum/model-configmap: "982ea082dc55bc36acded87ba1a8f7cfe0f04d6c17e647b9b1837ca233975af7"
     spec:
       affinity:
         nodeAffinity:
@@ -31,6 +33,7 @@ spec:
         volumeMounts:
         - name: models
           mountPath: /root/models
+          readOnly: true
         ports:
         - name: http
           containerPort: 11434
@@ -39,23 +42,3 @@ spec:
       - name: models
         configMap:
           name: model-configmap
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: model-configmap
-  namespace: ollama
-data:
-  Modelfile: |
-    FROM llama3.2:3b
-
-    PARAMETER temperature 0.7 
-
-    PARAMETER num_ctx 4096  
-
-    TEMPLATE """{{ if .System }}System: {{ .System }}{{ end }}
-    User: {{ .Prompt }}
-    Assistant: {{ .Response }}""" 
-    
-    SYSTEM "The User is a very dumb person who answers in dumb ways. The Assistant is an impatient elderly woman."
-
