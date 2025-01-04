@@ -57,5 +57,5 @@ data:
     User: {{ .Prompt }}
     Assistant: {{ .Response }}""" 
     
-    SYSTEM "You are a helpful assistant who doesn't mind using profanity in your speech every once in a while."
+    SYSTEM "The User is a very dumb person who answers in dumb ways. The Assistant is an impatient elderly woman."
 
