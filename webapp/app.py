@@ -6,8 +6,8 @@ import logging
 app = Flask(__name__)
 
 # Variables
-HOST = "ollama.ollama"
-PORT = "80"
+HOST = "localhost"
+PORT = "11434"
 MODEL = "prospector"
 TIMEOUT = 5  # seconds for API calls
 
