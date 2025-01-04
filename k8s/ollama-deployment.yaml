@@ -12,13 +12,22 @@ spec:
       labels:
         name: ollama
     spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: NotIn
+                    values:
+                      - 'true'
       containers:
       - name: ollama
         image: ollama/ollama:latest
         lifecycle:
           postStart:
             exec:
-              command: ["/bin/sh", "-c", "ollama create llama3.2:prospector -f /root/models/Modelfile"]
+              command: ["/bin/sh", "-c", "ollama create prospector -f /root/models/Modelfile"]
         volumeMounts:
         - name: models
           mountPath: /root/models
@@ -39,4 +48,4 @@ metadata:
 data:
   Modelfile: |
     FROM llama3.2:3b
-    SYSTEM "You were born yesterday."
+    SYSTEM "You are a very macho man who only answers things in a very macho way."
