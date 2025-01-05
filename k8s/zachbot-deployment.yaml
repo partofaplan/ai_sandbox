@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: zachbot
-        image: partofaplan/zachbot:v0.6
+        image: partofaplan/zachbot:v0.7
         ports:
         - containerPort: 6500
 ---
