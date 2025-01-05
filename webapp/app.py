@@ -5,15 +5,16 @@ import logging
 
 app = Flask(__name__)
 
-# Variables
-HOST = "localhost"
-PORT = "11434"
+# $HOST is ollama.ollama in RKE and https://localhost when locally deployed
+HOST = "ollama.ollama"
+# Port is 80 on RKE and 11434 when deployed locally
+PORT = "80"
 MODEL = "prospector:latest"
 TIMEOUT = 300  # seconds for API calls
 
 # API URL to reload the model
-CREATE_API_URL = f"http://{HOST}:{PORT}/api/create"
-GENERATE_API_URL = f"http://{HOST}:{PORT}/api/generate"
+CREATE_API_URL = f"{HOST}:{PORT}/api/create"
+GENERATE_API_URL = f"{HOST}:{PORT}/api/generate"
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
