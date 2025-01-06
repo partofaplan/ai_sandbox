@@ -1,0 +1,14 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: ollama-ingressroute
+  namespace: ollama
+spec:
+  entryPoints:
+    - web # Use 'websecure' for HTTPS if configured
+  routes:
+    - match: Host(`ollama.rancher.private`) && PathPrefix(`/`)
+      kind: Rule
+      services:
+        - name: ollama
+          port: 80

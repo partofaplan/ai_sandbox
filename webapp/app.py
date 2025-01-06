@@ -19,6 +19,7 @@ GENERATE_API_URL = f"http://{HOST}:{PORT}/api/generate"
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+logger.info(f"Generated API URL: {GENERATE_API_URL}")
 
 # Route for the home page
 @app.route('/')

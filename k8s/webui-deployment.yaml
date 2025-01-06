@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webui
+  namespace: ollama
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: webui
+  template:
+    metadata:
+      labels:
+        name: webui
+    spec:
+      volumes:
+      - hostPath:
+          path: /opt/webui
+          type: DirectoryOrCreate
+        name: webui-storage
+      nodeName: ollama-worker-1
+      containers:
+        - name: webui
+          image: ghcr.io/open-webui/open-webui:main
+          volumeMounts:
+          - mountPath: /app/backend/data
+            name: webui-storage
+          env:
+            - name: OLLAMA_BASE_URLS
+              value: "http://ollama"
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webui
+  namespace: ollama
+spec:
+  type: ClusterIP
+  selector:
+    name: webui
+  ports:
+  - port: 80
+    name: http
+    targetPort: http
+    protocol: TCP
