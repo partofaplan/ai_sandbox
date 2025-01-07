@@ -90,7 +90,7 @@ def chat():
         }
 
         logger.info(f"Sending chat request to Ollama: URL: {GENERATE_API_URL}, Payload: {data}")
-        response = requests.post(GENERATE_API_URL, json=data, timeout=TIMEOUT)
+        response = requests.post(GENERATE_API_URL, json=data, headers={"Content-Type": "application/json"}, timeout=TIMEOUT)
 
         logger.debug(f"Ollama API raw response: Status: {response.status_code}, Body: {response.text}")
 
@@ -132,7 +132,7 @@ def reload_model():
 
     try:
         logger.info(f"Sending model reload request to Ollama: {CREATE_API_URL}, Payload: {model_data}")
-        response = requests.post(CREATE_API_URL, json=model_data, timeout=TIMEOUT)
+        response = requests.post(CREATE_API_URL, json=model_data, headers={"Content-Type": "application/json"}, timeout=TIMEOUT)
 
         if response.status_code == 200:
             logger.info("Model reloaded successfully.")
