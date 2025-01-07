@@ -18,5 +18,5 @@ COPY . /app/
 # Expose the Flask app's port
 EXPOSE 6500
 
-# Set the command to run the app with Gunicorn
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:6500", "app:app"]
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:6500", "app:app", "--log-level", "debug", "--access-logfile", "-", "--error-logfile", "-", "--capture-output", "--timeout", "120"]
+

@@ -6,7 +6,7 @@ metadata:
   labels:
     app: zachbot
 spec:
-  replicas: 3 # Adjust based on desired scalability
+  replicas: 1 # Adjust based on desired scalability
   selector:
     matchLabels:
       app: zachbot
@@ -17,12 +17,12 @@ spec:
     spec:
       containers:
         - name: zachbot
-          image: partofaplan/zachbot:v0.8
+          image: partofaplan/zachbot:v0.15
           ports:
             - containerPort: 6500
           env:
             - name: OLLAMA_HOST
-              value: "ollama-service" # Points to the service name of Ollama
+              value: "ollama.ollama" # Points to the service name of Ollama
             - name: OLLAMA_PORT
               value: "80"
           resources:

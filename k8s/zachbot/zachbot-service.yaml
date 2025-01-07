@@ -3,13 +3,11 @@ kind: Service
 metadata:
   name: zachbot-service
   namespace: ollama
-  labels:
-    app: zachbot
 spec:
   selector:
     app: zachbot
   ports:
-    - protocol: TCP
-      port: 6500
-      targetPort: 6500
+  - protocol: TCP
+    port: 80
+    targetPort: 6500
   type: ClusterIP
