@@ -2,13 +2,13 @@ from flask import Flask, request, jsonify, render_template
 import requests
 from requests.exceptions import RequestException, Timeout
 import logging
+import os
 
 app = Flask(__name__)
 
-# $HOST is ollama.ollama in RKE and https://localhost when locally deployed
-HOST = "ollama.ollama"
-# Port is 80 on RKE and 11434 when deployed locally
-PORT = "80"
+import os
+HOST = os.getenv("OLLAMA_HOST", "ollama.ollama")
+PORT = os.getenv("OLLAMA_PORT", "80")
 MODEL = "prospector:latest"
 TIMEOUT = 300  # seconds for API calls
 

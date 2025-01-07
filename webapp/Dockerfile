@@ -1,21 +1,22 @@
-# Use an official Python runtime as a base image
-FROM python:3.9-slim
+# Use an official Python runtime as the base image
+FROM python:3.10-slim
 
-# Set environment variables to prevent Python from writing .pyc files and to ensure output is flushed
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE 1  # Prevents Python from writing .pyc files
+ENV PYTHONUNBUFFERED 1        # Ensures stdout and stderr are flushed immediately
 
-# Set the working directory in the container
+# Set the working directory
 WORKDIR /app
 
-# Copy the application code to the container
-COPY . /app
-
 # Install dependencies
+COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Expose the port Flask will run on
+# Copy the application code
+COPY . /app/
+
+# Expose the Flask app's port
 EXPOSE 6500
 
-# Run the Flask application
-CMD ["python", "app.py"]
+# Set the command to run the app with Gunicorn
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:6500", "app:app"]

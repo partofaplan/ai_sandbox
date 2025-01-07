@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zachbot
+  namespace: ollama
+  labels:
+    app: zachbot
+spec:
+  replicas: 3 # Adjust based on desired scalability
+  selector:
+    matchLabels:
+      app: zachbot
+  template:
+    metadata:
+      labels:
+        app: zachbot
+    spec:
+      containers:
+        - name: zachbot
+          image: partofaplan/zachbot:v0.8
+          ports:
+            - containerPort: 6500
+          env:
+            - name: OLLAMA_HOST
+              value: "ollama-service" # Points to the service name of Ollama
+            - name: OLLAMA_PORT
+              value: "80"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "500m"
+            limits:
+              memory: "256Mi"
+              cpu: "1"
+          readinessProbe:
+            httpGet:
+              path: / # Adjust to a valid health check path
+              port: 6500
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: / # Adjust to a valid health check path
+              port: 6500
+            initialDelaySeconds: 10
+            periodSeconds: 15
