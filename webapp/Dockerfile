@@ -8,6 +8,8 @@ ENV PYTHONUNBUFFERED 1        # Ensures stdout and stderr are flushed immediatel
 # Set the working directory
 WORKDIR /app
 
+RUN apt-get update && apt-get -y install curl
+
 # Install dependencies
 COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
