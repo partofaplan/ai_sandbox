@@ -20,5 +20,5 @@ COPY . /app/
 # Expose the Flask app's port
 EXPOSE 6500
 
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:6500", "app:app", "--log-level", "debug", "--access-logfile", "-", "--error-logfile", "-", "--capture-output", "--timeout", "120"]
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:6500", "--forwarded-allow-ips", "*", "--proxy-allow-from", "*", "app:app", "--log-level", "debug", "--access-logfile", "-", "--error-logfile", "-", "--capture-output", "--timeout", "120"]
 

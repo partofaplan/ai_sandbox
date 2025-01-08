@@ -155,6 +155,48 @@ def reload_model():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/test-ollama', methods=['GET'])
+def test_ollama():
+    logger.info(f"Testing connection to Ollama at {HOST}:{PORT}")
+    
+    # Test basic connection
+    try:
+        response = requests.get(f"http://{HOST}:{PORT}/api/tags", 
+                              timeout=5,
+                              headers={'Connection': 'close'})  # Force connection close
+        logger.info(f"Tags API Response: {response.status_code}")
+        return jsonify({
+            "status": "success",
+            "tags_status": response.status_code,
+            "host": HOST,
+            "port": PORT,
+            "response": response.text if response.ok else None
+        })
+    except requests.exceptions.Timeout:
+        logger.error("Connection timed out")
+        return jsonify({
+            "status": "error",
+            "error": "timeout",
+            "host": HOST,
+            "port": PORT
+        }), 504
+    except requests.exceptions.ConnectionError as e:
+        logger.error(f"Connection error: {str(e)}")
+        return jsonify({
+            "status": "error",
+            "error": str(e),
+            "host": HOST,
+            "port": PORT
+        }), 503
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}")
+        return jsonify({
+            "status": "error",
+            "error": str(e),
+            "host": HOST,
+            "port": PORT
+        }), 500
+
 if __name__ == '__main__':
     # Make sure templates are auto-reloaded during development
     app.config['TEMPLATES_AUTO_RELOAD'] = True
