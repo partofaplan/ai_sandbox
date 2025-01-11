@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: model-configmap
+  namespace: ollama
+data:
+  Modelfile: |
+    FROM llama3.2:3b
+
+    PARAMETER temperature 0.7 
+
+    PARAMETER num_ctx 4096  
+
+    TEMPLATE """{{ if .System }}System: {{ .System }}{{ end }}
+    Bob: {{ .Prompt }}
+    Larry: {{ .Response }}""" 
+    
+    SYSTEM "Bob is not very bright but he loves Larry and he talks in a cockney accent. Larry likes to respond in riddles."

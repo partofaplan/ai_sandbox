@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama
+  namespace: ollama
+spec:
+  selector:
+    matchLabels:
+      name: ollama
+  template:
+    metadata:
+      labels:
+        name: ollama    
+      annotations:
+        checksum/model-configmap: "982ea082dc55bc36acded87ba1a8f7cfe0f04d6c17e647b9b1837ca233975af7"
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node-role.kubernetes.io/control-plane
+                    operator: NotIn
+                    values:
+                      - 'true'
+      containers:
+      - name: ollama
+        image: ollama/ollama:latest
+        lifecycle:
+          postStart:
+            exec:
+              command: ["/bin/sh", "-c", "ollama create prospector -f /root/models/Modelfile"]
+        volumeMounts:
+        - name: models
+          mountPath: /root/models
+          readOnly: true
+        ports:
+        - name: http
+          containerPort: 11434
+          protocol: TCP
+      volumes:
+      - name: models
+        configMap:
+          name: model-configmap
