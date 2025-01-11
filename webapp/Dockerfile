@@ -1,4 +1,3 @@
-# Use an official Python runtime as the base image
 FROM python:3.10-slim
 
 # Set environment variables
