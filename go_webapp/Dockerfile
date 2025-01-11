@@ -1,5 +1,5 @@
 # Stage 1: Build the Go application
-FROM golang:1.21-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 # Install necessary tools
 RUN apk --no-cache add git
@@ -33,10 +33,9 @@ COPY --from=builder /app/zachbot .
 
 # Copy templates and static files
 COPY --from=builder /app/templates ./templates
-COPY --from=builder /app/static ./static
 
 # Expose the application port
-EXPOSE 6500
+EXPOSE 6600
 
 # Command to run the executable
 CMD ["./zachbot"]

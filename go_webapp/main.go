@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -22,7 +22,7 @@ type ChatResponse struct {
 }
 
 var (
-	HOST   = getEnv("OLLAMA_HOST", "localhost")
+	HOST   = getEnv("OLLAMA_HOST", "ollama")
 	PORT   = getEnv("OLLAMA_PORT", "11434")
 	MODEL  = getEnv("OLLAMA_MODEL", "prospector:latest")
 	TIMEOUT, _ = time.ParseDuration(getEnv("API_TIMEOUT", "300s"))
@@ -31,6 +31,7 @@ var (
 	GENERATE_API_URL = "http://" + HOST + ":" + PORT + "/api/generate"
 
 	logger = logrus.New()
+	client = &http.Client{Timeout: TIMEOUT}
 )
 
 func getEnv(key, fallback string) string {
@@ -44,7 +45,7 @@ func main() {
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"*"},
+		AllowOrigins: []string{"*", "http://localhost:6600"},
 		AllowMethods: []string{"GET", "POST", "OPTIONS"},
 		AllowHeaders: []string{"Content-Type", "Authorization"},
 	}))
@@ -60,22 +61,37 @@ func main() {
 	r.POST("/reload-model", reloadModelHandler)
 	r.GET("/test-ollama", testOllamaHandler)
 
-	r.Run(":6500")
+	r.Run(":6600")
 }
 
 func homeHandler(c *gin.Context) {
-	logger.Info("Serving home page")
+	logger.Info("Serving home page on port 6600")
 	c.HTML(http.StatusOK, "index.html", nil)
 }
 
 func healthCheckHandler(c *gin.Context) {
-	resp, err := http.Get("http://" + HOST + ":" + PORT + "/api/tags")
+	logger.Infof("Sending health check request to: http://%s:%s/api/tags", HOST, PORT)
+	req, err := http.NewRequest("GET", "http://"+HOST+":"+PORT+"/api/tags", nil)
 	if err != nil {
+		logger.Error("Error creating health check request: ", err)
 		c.JSON(http.StatusServiceUnavailable, gin.H{"status": "unhealthy", "error": err.Error()})
 		return
 	}
-	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusOK {
+	req.Header.Set("Content-Type", "application/json")
+	req.Host = HOST
+
+	resp, err := client.Do(req)
+	if err != nil {
+		logger.Error("Error performing health check request: ", err)
+		c.JSON(http.StatusServiceUnavailable, gin.H{"status": "unhealthy", "error": err.Error()})
+		return
+	}
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+
+	logger.Infof("Health check response status: %d", resp.StatusCode)
+	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		c.JSON(http.StatusOK, gin.H{"status": "healthy", "ollama_connection": "ok"})
 	} else {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"status": "degraded", "ollama_connection": "failed"})
@@ -95,26 +111,46 @@ func chatHandler(c *gin.Context) {
 		"prompt": request.Prompt,
 		"stream": false,
 	}
-	payloadBytes, _ := json.Marshal(payload)
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		logger.Error("Error marshaling payload: ", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal request payload"})
+		return
+	}
 
-	client := &http.Client{Timeout: TIMEOUT}
-	resp, err := client.Post(GENERATE_API_URL, "application/json", ioutil.NopCloser(bytes.NewReader(payloadBytes)))
+	req, err := http.NewRequest("POST", GENERATE_API_URL, bytes.NewBuffer(payloadBytes))
+	if err != nil {
+		logger.Error("Error creating request: ", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request"})
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
 	if err != nil {
 		logger.Error("Error communicating with Ollama API: ", err)
 		c.JSON(http.StatusGatewayTimeout, gin.H{"error": "Request timed out"})
 		return
 	}
-	defer resp.Body.Close()
-
-	body, _ := ioutil.ReadAll(resp.Body)
-	var chatResp ChatResponse
-	json.Unmarshal(body, &chatResp)
-
-	if resp.StatusCode == http.StatusOK {
-		c.JSON(http.StatusOK, chatResp)
-	} else {
-		c.JSON(resp.StatusCode, gin.H{"error": "Failed to get valid response"})
+	if resp != nil {
+		defer resp.Body.Close()
 	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logger.Error("Error reading response body: ", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read response body"})
+		return
+	}
+
+	var chatResp ChatResponse
+	if err := json.Unmarshal(body, &chatResp); err != nil {
+		logger.Error("Error parsing response: ", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid response format"})
+		return
+	}
+
+	c.JSON(http.StatusOK, chatResp)
 }
 
 func reloadModelHandler(c *gin.Context) {
@@ -122,23 +158,48 @@ func reloadModelHandler(c *gin.Context) {
 		"model": "prospector",
 		"path":  "/root/models/Modelfile",
 	}
-	payloadBytes, _ := json.Marshal(payload)
-	client := &http.Client{Timeout: TIMEOUT}
-	resp, err := client.Post(CREATE_API_URL, "application/json", ioutil.NopCloser(bytes.NewReader(payloadBytes)))
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		logger.Error("Error marshaling payload: ", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal request payload"})
+		return
+	}
+
+	req, err := http.NewRequest("POST", CREATE_API_URL, bytes.NewBuffer(payloadBytes))
+	if err != nil {
+		logger.Error("Error creating request: ", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request"})
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
 	if err != nil || resp.StatusCode != http.StatusOK {
+		logger.Error("Error reloading model: ", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reload model"})
 		return
+	}
+	if resp != nil {
+		defer resp.Body.Close()
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "Model reloaded successfully"})
 }
 
 func testOllamaHandler(c *gin.Context) {
-	resp, err := http.Get("http://" + HOST + ":" + PORT + "/api/tags")
+	resp, err := client.Get("http://" + HOST + ":" + PORT + "/api/tags")
 	if err != nil {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
 		return
 	}
-	defer resp.Body.Close()
-	body, _ := ioutil.ReadAll(resp.Body)
+	if resp != nil {
+		defer resp.Body.Close()
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logger.Error("Error reading response body: ", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to read response body"})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"status": "success", "response": string(body)})
 }

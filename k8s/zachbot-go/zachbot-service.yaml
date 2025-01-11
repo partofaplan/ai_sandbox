@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: zachbot-service
+  name: zachbot-go-service
   namespace: ollama
 spec:
   selector:
-    app: zachbot
+    app: zachbot-go
   ports:
   - protocol: TCP
     port: 80
-    targetPort: 6500
+    targetPort: 6600
   type: ClusterIP
