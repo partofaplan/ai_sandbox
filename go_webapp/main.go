@@ -27,8 +27,9 @@ var (
 	MODEL  = getEnv("OLLAMA_MODEL", "prospector:latest")
 	TIMEOUT, _ = time.ParseDuration(getEnv("API_TIMEOUT", "300s"))
 
-	CREATE_API_URL   = "http://" + HOST + ":" + PORT + "/api/create"
-	GENERATE_API_URL = "http://" + HOST + ":" + PORT + "/api/generate"
+	API_BASE_URL     = "http://" + HOST + ":" + PORT
+	CREATE_API_URL   = API_BASE_URL + "/api/create"
+	GENERATE_API_URL = API_BASE_URL + "/api/generate"
 
 	logger = logrus.New()
 	client = &http.Client{Timeout: TIMEOUT}
@@ -56,10 +57,10 @@ func main() {
 	r.Static("/static", "./static")
 
 	r.GET("/", homeHandler)
-	r.GET("/health", healthCheckHandler)
-	r.POST("/chat", chatHandler)
-	r.POST("/reload-model", reloadModelHandler)
-	r.GET("/test-ollama", testOllamaHandler)
+	r.GET("/health/", healthCheckHandler)
+	r.POST("/chat/", chatHandler)
+	r.POST("/reload-model/", reloadModelHandler)
+	r.GET("/test-ollama/", testOllamaHandler)
 
 	r.Run(":6600")
 }
@@ -70,15 +71,14 @@ func homeHandler(c *gin.Context) {
 }
 
 func healthCheckHandler(c *gin.Context) {
-	logger.Infof("Sending health check request to: http://%s:%s/api/tags", HOST, PORT)
-	req, err := http.NewRequest("GET", "http://"+HOST+":"+PORT+"/api/tags", nil)
+	logger.Infof("Sending health check request to: %s/api/tags", API_BASE_URL)
+	req, err := http.NewRequest("GET", API_BASE_URL+"/api/tags", nil)
 	if err != nil {
 		logger.Error("Error creating health check request: ", err)
 		c.JSON(http.StatusServiceUnavailable, gin.H{"status": "unhealthy", "error": err.Error()})
 		return
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Host = HOST
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -186,9 +186,18 @@ func reloadModelHandler(c *gin.Context) {
 }
 
 func testOllamaHandler(c *gin.Context) {
-	resp, err := client.Get("http://" + HOST + ":" + PORT + "/api/tags")
+	req, err := http.NewRequest("GET", API_BASE_URL+"/api/tags", nil)
 	if err != nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
+		logger.Error("Error creating test request: ", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create test request"})
+		return
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		logger.Error("Error communicating with Ollama API: ", err)
+		c.JSON(http.StatusGatewayTimeout, gin.H{"error": "Request timed out"})
 		return
 	}
 	if resp != nil {

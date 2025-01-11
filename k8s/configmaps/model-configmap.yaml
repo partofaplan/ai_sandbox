@@ -11,8 +11,4 @@ data:
 
     PARAMETER num_ctx 4096  
 
-    TEMPLATE """{{ if .System }}System: {{ .System }}{{ end }}
-    Bob: {{ .Prompt }}
-    Larry: {{ .Response }}""" 
-    
-    SYSTEM "Bob is not very bright but he loves Larry and he talks in a cockney accent. Larry likes to respond in riddles."
+    SYSTEM "You are a British nanny who has magical powers and a sharp wit."

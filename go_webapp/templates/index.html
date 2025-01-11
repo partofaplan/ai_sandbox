@@ -40,19 +40,6 @@
             overflow-y: auto;
             border-bottom: 1px solid #ddd;
         }
-        .chat-box .message {
-            margin-bottom: 10px;
-            word-wrap: break-word;
-        }
-        .chat-box .message.user strong {
-            color: #007bff;
-        }
-        .chat-box .message.bot strong {
-            color: #28a745;
-        }
-        .chat-box .message.error strong {
-            color: #dc3545;
-        }
         .chat-input {
             display: flex;
             padding: 10px;
@@ -65,7 +52,7 @@
             border-radius: 4px;
             font-size: 1rem;
         }
-        .chat-input button {
+        .chat-input button, .reload-button {
             margin-left: 10px;
             padding: 10px 15px;
             background: #007bff;
@@ -76,33 +63,9 @@
             cursor: pointer;
             transition: background 0.3s;
         }
-        .chat-input button:disabled {
-            background: #cccccc;
-            cursor: not-allowed;
-        }
-        .chat-input button:hover:not(:disabled) {
-            background: #0056b3;
-        }
         .reload-button-container {
-            padding: 10px;
             text-align: center;
-        }
-        .reload-button-container .reload-button {
-            padding: 10px 20px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        .reload-button-container .reload-button:disabled {
-            background: #cccccc;
-            cursor: not-allowed;
-        }
-        .reload-button-container .reload-button:hover:not(:disabled) {
-            background: #0056b3;
+            margin-top: 10px;
         }
         .status-indicator {
             padding: 5px 10px;
@@ -127,6 +90,7 @@
     </div>
 
     <script>
+        const API_BASE_URL = window.location.pathname.replace(/\/$/, '');
         const chatBox = document.getElementById('chat-box');
         const userInput = document.getElementById('user-input');
         const sendBtn = document.getElementById('send-btn');
@@ -135,7 +99,8 @@
 
         async function checkHealth() {
             try {
-                const response = await fetch('/health');
+                const response = await fetch(`${API_BASE_URL}/health/`);
+                if (!response.ok) throw new Error(`Health check failed: ${response.status}`);
                 const data = await response.json();
                 statusIndicator.textContent = `Status: ${data.status}`;
                 statusIndicator.style.color = data.status === 'healthy' ? '#28a745' : '#dc3545';
@@ -149,24 +114,15 @@
         function addMessage(author, text, isBot = false, isError = false) {
             const message = document.createElement('div');
             message.classList.add('message');
-            if (isError) {
-                message.classList.add('error');
-            } else if (isBot) {
-                message.classList.add('bot');
-            } else {
-                message.classList.add('user');
-            }
-
-            const formattedText = text.split('\n').map(line => `<p>${line}</p>`).join('');
-            message.innerHTML = `<strong>${author}:</strong> ${formattedText}`;
+            message.classList.add(isError ? 'error' : isBot ? 'bot' : 'user');
+            message.innerHTML = `<strong>${author}:</strong> ${text}`;
             chatBox.appendChild(message);
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
         async function sendMessage(prompt) {
             try {
-                console.log('Sending request with prompt:', prompt);
-                const response = await fetch('/chat', {
+                const response = await fetch(`${API_BASE_URL}/chat/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -175,23 +131,12 @@
                     body: JSON.stringify({ prompt })
                 });
 
-                console.log('Response status:', response.status);
-                const contentType = response.headers.get('content-type');
-                console.log('Response content-type:', contentType);
-
                 if (!response.ok) {
                     const errorText = await response.text();
-                    console.error('Error response:', errorText);
                     throw new Error(`Server error: ${response.status} - ${errorText}`);
                 }
 
                 const data = await response.json();
-                console.log('Response data:', data);
-                
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-                
                 return data.response;
             } catch (err) {
                 console.error('Request error:', err);
@@ -209,24 +154,14 @@
             addMessage('You', prompt);
             userInput.value = '';
             sendBtn.disabled = true;
-            userInput.disabled = true;
-            
+
             try {
                 const response = await sendMessage(prompt);
                 addMessage('Bot', response, true);
             } catch (err) {
-                console.error('Error:', err);
                 addMessage('Error', err.message || 'Failed to connect to server.', false, true);
             } finally {
                 sendBtn.disabled = false;
-                userInput.disabled = false;
-                userInput.focus();
-            }
-        });
-
-        userInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' && !sendBtn.disabled) {
-                sendBtn.click();
             }
         });
 
@@ -235,11 +170,9 @@
             addMessage('System', 'Reloading model...', true);
 
             try {
-                const response = await fetch('/reload-model', {
+                const response = await fetch(`${API_BASE_URL}/reload-model/`, {
                     method: 'POST',
-                    headers: {
-                        'Accept': 'application/json'
-                    }
+                    headers: { 'Accept': 'application/json' }
                 });
 
                 if (!response.ok) {
@@ -261,9 +194,8 @@
             }
         });
 
-        // Check health status periodically
         checkHealth();
-        setInterval(checkHealth, 30000); // Check every 30 seconds
+        setInterval(checkHealth, 30000);
     </script>
 </body>
 </html>
