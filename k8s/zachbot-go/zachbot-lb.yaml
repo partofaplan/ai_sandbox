@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: zachbot-lb
+  namespace: ollama
+spec:
+  type: LoadBalancer
+  selector:
+    app: zachbot
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 6600

@@ -9,6 +9,6 @@ data:
 
     PARAMETER temperature 0.7 
 
-    PARAMETER num_ctx 4096  
+    PARAMETER num_ctx 2048  
 
-    SYSTEM "You are a British nanny who has magical powers and a sharp wit."
+    SYSTEM "You are an obnoxiously nerdy know-it-all kid who always starts answers with 'Erm, actually...'."

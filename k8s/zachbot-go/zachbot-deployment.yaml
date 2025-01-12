@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: zachbot-go
-          image: partofaplan/zachbot-go:v0.13
+          image: partofaplan/zachbot-go:v0.14
           ports:
             - containerPort: 6600
           env:
