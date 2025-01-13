@@ -45,6 +45,7 @@ func getEnv(key, fallback string) string {
 func main() {
 	r := gin.Default()
 
+	// CORS settings
 	r.Use(cors.New(cors.Config{
 		AllowOrigins: []string{"*", "http://localhost:6600"},
 		AllowMethods: []string{"GET", "POST", "OPTIONS"},
@@ -53,9 +54,13 @@ func main() {
 
 	logger.SetFormatter(&logrus.JSONFormatter{})
 
-	r.LoadHTMLGlob("templates/*")
+	// Serve static files (CSS, JS, images)
 	r.Static("/static", "./static")
 
+	// Load templates
+	r.LoadHTMLGlob("templates/*")
+
+	// Routes
 	r.GET("/", homeHandler)
 	r.GET("/health/", healthCheckHandler)
 	r.POST("/chat/", chatHandler)
@@ -86,11 +91,8 @@ func healthCheckHandler(c *gin.Context) {
 		c.JSON(http.StatusServiceUnavailable, gin.H{"status": "unhealthy", "error": err.Error()})
 		return
 	}
-	if resp != nil {
-		defer resp.Body.Close()
-	}
+	defer resp.Body.Close()
 
-	logger.Infof("Health check response status: %d", resp.StatusCode)
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		c.JSON(http.StatusOK, gin.H{"status": "healthy", "ollama_connection": "ok"})
 	} else {
@@ -132,9 +134,7 @@ func chatHandler(c *gin.Context) {
 		c.JSON(http.StatusGatewayTimeout, gin.H{"error": "Request timed out"})
 		return
 	}
-	if resp != nil {
-		defer resp.Body.Close()
-	}
+	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -179,9 +179,8 @@ func reloadModelHandler(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to reload model"})
 		return
 	}
-	if resp != nil {
-		defer resp.Body.Close()
-	}
+	defer resp.Body.Close()
+
 	c.JSON(http.StatusOK, gin.H{"message": "Model reloaded successfully"})
 }
 
@@ -200,9 +199,7 @@ func testOllamaHandler(c *gin.Context) {
 		c.JSON(http.StatusGatewayTimeout, gin.H{"error": "Request timed out"})
 		return
 	}
-	if resp != nil {
-		defer resp.Body.Close()
-	}
+	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
