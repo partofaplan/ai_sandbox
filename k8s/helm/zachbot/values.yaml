@@ -10,12 +10,12 @@ zachbot:
   ingress:
     enabled: true
     className: traefik
-    host: zachbot.localhost
+    host: zachbot.k3d.local
     path: /
     pathType: Prefix
     annotations: {}
   env:
-    OLLAMA_HOST: ollama
+    OLLAMA_HOST: zachbot-zachbot-ollama
     OLLAMA_PORT: "80"
     SERVER_PORT: "6600"
   resources:
@@ -38,7 +38,7 @@ ollama:
   ingress:
     enabled: true
     className: traefik
-    host: ollama.localhost
+    host: ollama.k3d.local
     path: /
     pathType: Prefix
     annotations: {}
