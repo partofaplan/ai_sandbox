@@ -1,0 +1,23 @@
+{{- if .Values.zachbot.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "zachbot.fullname" . }}
+  {{- with .Values.zachbot.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.zachbot.ingress.className }}
+  rules:
+    - host: {{ .Values.zachbot.ingress.host }}
+      http:
+        paths:
+          - path: {{ .Values.zachbot.ingress.path }}
+            pathType: {{ .Values.zachbot.ingress.pathType }}
+            backend:
+              service:
+                name: {{ include "zachbot.fullname" . }}
+                port:
+                  number: {{ .Values.zachbot.service.port }}
+{{- end }}

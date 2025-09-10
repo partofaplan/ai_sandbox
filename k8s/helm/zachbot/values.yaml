@@ -7,8 +7,15 @@ zachbot:
   service:
     type: ClusterIP
     port: 80
+  ingress:
+    enabled: true
+    className: traefik
+    host: zachbot.k3d.local
+    path: /
+    pathType: Prefix
+    annotations: {}
   env:
-    OLLAMA_HOST: ollama
+    OLLAMA_HOST: zachbot-zachbot-ollama
     OLLAMA_PORT: "80"
     SERVER_PORT: "6600"
   resources:
@@ -28,6 +35,13 @@ ollama:
   service:
     type: ClusterIP
     port: 80
+  ingress:
+    enabled: true
+    className: traefik
+    host: ollama.k3d.local
+    path: /
+    pathType: Prefix
+    annotations: {}
   nodeAffinity:
     key: node-role.kubernetes.io/control-plane
     operator: NotIn
