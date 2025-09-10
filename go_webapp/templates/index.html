@@ -1,41 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="stylesheet" href="/static/css/style.css">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Zachbot</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="chat-container">
-        <div class="chat-header">Zachbot</div>
-        <div id="chat-box" class="chat-box"></div>
-        <div class="status-indicator" id="status-indicator"></div>
-        <div class="chat-input">
-            <input type="text" id="user-input" placeholder="Type your message..." />
-            <button id="send-btn">Send</button>
+    <div class="app">
+        <header class="app-header">
+            <div class="brand">
+                <div class="logo">🤖</div>
+                <div class="title">Zachbot</div>
+            </div>
+            <div class="header-actions">
+                <button id="reload-btn" class="btn btn-ghost" title="Reload model">Reload</button>
+            </div>
+        </header>
+
+        <div id="progress" class="progress hidden">
+            <div class="indeterminate"></div>
         </div>
-        <div class="reload-button-container">
-            <button id="reload-btn" class="reload-button">Reload Model</button>
-        </div>
+
+        <main id="chat" class="chat">
+            <div id="chat-log" class="chat-log"></div>
+        </main>
+
+        <footer class="composer">
+            <form id="composer-form" class="composer-form" autocomplete="off">
+                <input id="user-input" class="input" type="text" placeholder="Ask me anything..." />
+                <button id="send-btn" class="btn btn-primary" type="submit">Send</button>
+            </form>
+            <div id="status-indicator" class="status"></div>
+        </footer>
     </div>
 
+    <script src="/static/js/app.js"></script>
+    <noscript>Your browser must support JavaScript to use Zachbot.</noscript>
+    
+    <!-- Initial assistant message -->
     <script>
-        const API_BASE_URL = window.location.pathname.replace(/\/$/, '');
-        const chatBox = document.getElementById('chat-box');
-        const userInput = document.getElementById('user-input');
-        const sendBtn = document.getElementById('send-btn');
-        const reloadBtn = document.getElementById('reload-btn');
-        const statusIndicator = document.getElementById('status-indicator');
-
-        function addMessage(author, text, isBot = false, isError = false) {
-            const message = document.createElement('div');
-            message.classList.add('message');
-            message.classList.add(isError ? 'error' : isBot ? 'bot' : 'user');
-            message.textContent = text;
-            chatBox.appendChild(message);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
+        window.addEventListener('DOMContentLoaded', () => {
+            window.ChatUI?.addAssistantMessage("Hi! I’m Zachbot. How can I help?");
+        });
     </script>
 </body>
 </html>
