@@ -34,13 +34,13 @@ spec:
               cpu: "1"
           readinessProbe:
             httpGet:
-              path: / # Adjust to a valid health check path
+              path: /health/
               port: 6600
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
             httpGet:
-              path: / # Adjust to a valid health check path
+              path: /health/
               port: 6600
             initialDelaySeconds: 10
             periodSeconds: 15

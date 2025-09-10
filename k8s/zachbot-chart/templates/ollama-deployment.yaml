@@ -1,0 +1,46 @@
+{{- if .Values.ollama.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "zachbot.fullname" . }}-ollama
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "zachbot.fullname" . }}-ollama
+  template:
+    metadata:
+      labels:
+        app: {{ include "zachbot.fullname" . }}-ollama
+      annotations:
+        checksum/model-configmap: {{ .Values.modelConfig.Modelfile | sha256sum | quote }}
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: {{ .Values.ollama.nodeAffinity.key }}
+                    operator: {{ .Values.ollama.nodeAffinity.operator }}
+                    values:
+{{ toYaml .Values.ollama.nodeAffinity.values | indent 22 }}
+      containers:
+        - name: ollama
+          image: "{{ .Values.ollama.image.repository }}:{{ .Values.ollama.image.tag }}"
+          imagePullPolicy: {{ .Values.ollama.image.pullPolicy }}
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c", "ollama create prospector -f /root/models/Modelfile"]
+          volumeMounts:
+            - name: models
+              mountPath: /root/models
+              readOnly: true
+          ports:
+            - name: http
+              containerPort: 11434
+              protocol: TCP
+      volumes:
+        - name: models
+          configMap:
+            name: {{ include "zachbot.fullname" . }}-model
+{{- end }}
