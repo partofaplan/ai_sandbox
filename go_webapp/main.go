@@ -22,10 +22,11 @@ type ChatResponse struct {
 }
 
 var (
-	HOST   = getEnv("OLLAMA_HOST", "ollama")
-	PORT   = getEnv("OLLAMA_PORT", "11434")
-	MODEL  = getEnv("OLLAMA_MODEL", "prospector:latest")
-	TIMEOUT, _ = time.ParseDuration(getEnv("API_TIMEOUT", "300s"))
+	HOST     = getEnv("OLLAMA_HOST", "ollama")
+	PORT     = getEnv("OLLAMA_PORT", "11434")
+	MODEL    = getEnv("OLLAMA_MODEL", "prospector:latest")
+	APP_PORT = getEnv("SERVER_PORT", "6600")
+	TIMEOUT  = getTimeout()
 
 	API_BASE_URL     = "http://" + HOST + ":" + PORT
 	CREATE_API_URL   = API_BASE_URL + "/api/create"
@@ -34,6 +35,15 @@ var (
 	logger = logrus.New()
 	client = &http.Client{Timeout: TIMEOUT}
 )
+
+func getTimeout() time.Duration {
+	duration, err := time.ParseDuration(getEnv("API_TIMEOUT", "300s"))
+	if err != nil {
+		logrus.Warnf("Invalid API_TIMEOUT, defaulting to 300s: %v", err)
+		return 300 * time.Second
+	}
+	return duration
+}
 
 func getEnv(key, fallback string) string {
 	if value, exists := os.LookupEnv(key); exists {
@@ -67,11 +77,11 @@ func main() {
 	r.POST("/reload-model/", reloadModelHandler)
 	r.GET("/test-ollama/", testOllamaHandler)
 
-	r.Run(":6600")
+	r.Run(":" + APP_PORT)
 }
 
 func homeHandler(c *gin.Context) {
-	logger.Info("Serving home page on port 6600")
+	logger.Infof("Serving home page on port %s", APP_PORT)
 	c.HTML(http.StatusOK, "index.html", nil)
 }
 

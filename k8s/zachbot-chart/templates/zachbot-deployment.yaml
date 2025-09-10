@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "zachbot.fullname" . }}
+  labels:
+    app: {{ include "zachbot.name" . }}
+spec:
+  replicas: {{ .Values.zachbot.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ include "zachbot.name" . }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "zachbot.name" . }}
+    spec:
+      containers:
+        - name: {{ include "zachbot.name" . }}
+          image: "{{ .Values.zachbot.image.repository }}:{{ .Values.zachbot.image.tag }}"
+          imagePullPolicy: {{ .Values.zachbot.image.pullPolicy }}
+          env:
+            - name: OLLAMA_HOST
+              value: {{ .Values.zachbot.env.OLLAMA_HOST | quote }}
+            - name: OLLAMA_PORT
+              value: {{ .Values.zachbot.env.OLLAMA_PORT | quote }}
+            - name: SERVER_PORT
+              value: {{ .Values.zachbot.env.SERVER_PORT | quote }}
+          ports:
+            - containerPort: {{ .Values.zachbot.env.SERVER_PORT | int }}
+          readinessProbe:
+            httpGet:
+              path: /health/
+              port: {{ .Values.zachbot.env.SERVER_PORT | int }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health/
+              port: {{ .Values.zachbot.env.SERVER_PORT | int }}
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+{{ toYaml .Values.zachbot.resources | indent 12 }}

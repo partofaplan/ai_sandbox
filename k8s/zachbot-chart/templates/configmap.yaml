@@ -1,0 +1,9 @@
+{{- if .Values.ollama.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "zachbot.fullname" . }}-model
+data:
+  Modelfile: |
+{{ .Values.modelConfig.Modelfile | indent 4 }}
+{{- end }}

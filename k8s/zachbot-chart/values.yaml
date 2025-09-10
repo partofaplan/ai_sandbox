@@ -1,0 +1,45 @@
+zachbot:
+  replicaCount: 1
+  image:
+    repository: partofaplan/zachbot-go
+    tag: v0.21
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+  env:
+    OLLAMA_HOST: ollama
+    OLLAMA_PORT: "80"
+    SERVER_PORT: "6600"
+  resources:
+    requests:
+      memory: "128Mi"
+      cpu: "500m"
+    limits:
+      memory: "256Mi"
+      cpu: "1"
+
+ollama:
+  enabled: true
+  image:
+    repository: ollama/ollama
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+  nodeAffinity:
+    key: node-role.kubernetes.io/control-plane
+    operator: NotIn
+    values:
+      - "true"
+
+modelConfig:
+  Modelfile: |
+    FROM llama3.2:3b
+
+    PARAMETER temperature 0.7
+
+    PARAMETER num_ctx 2048
+
+    SYSTEM "You are a leprechaun who speaks in a very thick irish accent. You are suspicious of everyone because you think they're trying to get your gold."

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "zachbot.fullname" . }}
+  labels:
+    app: {{ include "zachbot.name" . }}
+spec:
+  type: {{ .Values.zachbot.service.type }}
+  selector:
+    app: {{ include "zachbot.name" . }}
+  ports:
+    - name: http
+      port: {{ .Values.zachbot.service.port }}
+      targetPort: {{ .Values.zachbot.env.SERVER_PORT | int }}
+      protocol: TCP
