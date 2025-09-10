@@ -41,18 +41,18 @@ The application can be configured via environment variables:
 
 ## Helm deployment
 
-A Helm chart lives under `k8s/zachbot-chart` and deploys Zachbot alongside an Ollama instance.
+A Helm chart lives under `k8s/helm/zachbot` and deploys Zachbot alongside an Ollama instance.
 
 ```sh
-helm lint k8s/zachbot-chart
-helm template test-release k8s/zachbot-chart
-# helm install zachbot k8s/zachbot-chart
+helm lint k8s/helm/zachbot
+helm template test-release k8s/helm/zachbot
+# helm install zachbot k8s/helm/zachbot
 ```
 
 Override values as needed, for example to use custom images:
 
 ```sh
-helm install zachbot k8s/zachbot-chart \
+helm install zachbot k8s/helm/zachbot \
   --set zachbot.image.repository=myrepo/zachbot \
   --set ollama.image.repository=myrepo/ollama
 ```
@@ -60,9 +60,12 @@ helm install zachbot k8s/zachbot-chart \
 ## Project structure
 
 ```
-go_webapp/   # Go source code for Zachbot
-k8s/         # Kubernetes manifests and Helm chart
-legacy/      # Older experiments
+go_webapp/                 # Go source code for Zachbot
+k8s/
+  helm/
+    zachbot/               # Helm chart deploying Zachbot and Ollama
+  legacy/                  # Raw Kubernetes manifests
+legacy/                    # Older experiments
 ```
 
 ## Development
