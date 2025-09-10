@@ -1,0 +1,23 @@
+{{- if and .Values.ollama.enabled .Values.ollama.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "zachbot.fullname" . }}-ollama
+  {{- with .Values.ollama.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.ollama.ingress.className }}
+  rules:
+    - host: {{ .Values.ollama.ingress.host }}
+      http:
+        paths:
+          - path: {{ .Values.ollama.ingress.path }}
+            pathType: {{ .Values.ollama.ingress.pathType }}
+            backend:
+              service:
+                name: {{ include "zachbot.fullname" . }}-ollama
+                port:
+                  number: {{ .Values.ollama.service.port }}
+{{- end }}

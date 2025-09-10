@@ -13,7 +13,7 @@ Zachbot is a Go web service that proxies requests to an [Ollama](https://github.
 
 1. Start an Ollama instance or forward the service if it runs in a cluster:
    ```sh
-   kubectl -n ollama port-forward service/ollama 11434:80
+   kubectl port-forward service/zachbot-zachbot-ollama 11434:80
    ```
 2. Build and run the web application:
    ```sh
@@ -56,6 +56,12 @@ helm install zachbot k8s/helm/zachbot \
   --set zachbot.image.repository=myrepo/zachbot \
   --set ollama.image.repository=myrepo/ollama
 ```
+
+The chart also provisions Traefik ingresses for both services. By default,
+Zachbot is available at `http://zachbot.localhost` and the Ollama API at
+`http://ollama.localhost`. These hosts correspond to the
+`zachbot.ingress.host` and `ollama.ingress.host` entries in `values.yaml` and
+may be overridden as needed.
 
 ## Project structure
 
