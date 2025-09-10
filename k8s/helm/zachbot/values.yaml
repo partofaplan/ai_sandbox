@@ -47,7 +47,6 @@ ollama:
     operator: NotIn
     values:
       - "true"
-
 modelConfig:
   Modelfile: |
     FROM llama3.2:3b

@@ -30,7 +30,22 @@ spec:
           lifecycle:
             postStart:
               exec:
-                command: ["/bin/sh", "-c", "ollama create prospector -f /root/models/Modelfile"]
+                command:
+                  - "/bin/sh"
+                  - "-c"
+                  - |
+                    set -e
+                    # Wait for Ollama API to be ready
+                    for i in $(seq 1 60); do
+                      if curl -sf http://127.0.0.1:11434/api/tags >/dev/null; then
+                        break
+                      fi
+                      sleep 1
+                    done
+                    # Create or update the model from the Modelfile
+                    ollama create prospector -f /root/models/Modelfile || true
+                    # Warm the model into memory so zachbot gets fast first token
+                    ollama run prospector -p "ping" >/dev/null || true
           volumeMounts:
             - name: models
               mountPath: /root/models
