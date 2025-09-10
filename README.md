@@ -1,13 +1,83 @@
-## Ollama Notes
-# Local
-1. Ollama calls won't work without the port forward command:
-`kubectl -n ollama port-forward service/ollama 11434:80`
-2. Rename app.py.local and app.py so that app.py local is able to run with command
-`python app.py`
-# K8s
-1. You can use my deployment with my Dockerhub registry but it may be better to create and upload the Docker image to your own repo.
+# Zachbot
+
+Zachbot is a Go web service that proxies requests to an [Ollama](https://github.com/ollama/ollama) model. The repository also includes a Helm chart for deploying both Zachbot and a companion Ollama service to Kubernetes.
+
+## Prerequisites
+
+- [Go](https://go.dev/) 1.21+
+- [Helm](https://helm.sh/) 3.x
+- Access to a Kubernetes cluster for optional Helm deployment
+- An Ollama model (defaults to `prospector:latest`)
+
+## Running locally
+
+1. Start an Ollama instance or forward the service if it runs in a cluster:
+   ```sh
+   kubectl -n ollama port-forward service/ollama 11434:80
+   ```
+2. Build and run the web application:
+   ```sh
+   cd go_webapp
+   go build ./...
+   ./go_webapp
+   ```
+3. Chat with the service:
+   ```sh
+   curl -sS -X POST http://localhost:6600/chat/ \
+        -H "Content-Type: application/json" \
+        -d '{"prompt":"hello"}'
+   ```
+
+### Configuration
+The application can be configured via environment variables:
+
+| Variable       | Default            | Description                              |
+|----------------|--------------------|------------------------------------------|
+| `SERVER_PORT`  | `6600`             | Port used by the Zachbot server          |
+| `API_TIMEOUT`  | `300s`             | Timeout for requests to Ollama           |
+| `OLLAMA_HOST`  | `ollama`           | Hostname of the Ollama service           |
+| `OLLAMA_PORT`  | `11434`            | Port of the Ollama service               |
+| `OLLAMA_MODEL` | `prospector:latest`| Model name used for chat requests        |
+
+## Helm deployment
+
+A Helm chart lives under `k8s/helm/zachbot` and deploys Zachbot alongside an Ollama instance.
+
+```sh
+helm lint k8s/helm/zachbot
+helm template test-release k8s/helm/zachbot
+# helm install zachbot k8s/helm/zachbot
+```
+
+Override values as needed, for example to use custom images:
+
+```sh
+helm install zachbot k8s/helm/zachbot \
+  --set zachbot.image.repository=myrepo/zachbot \
+  --set ollama.image.repository=myrepo/ollama
+```
+
+## Project structure
+
+```
+go_webapp/                 # Go source code for Zachbot
+k8s/
+  helm/
+    zachbot/               # Helm chart deploying Zachbot and Ollama
+  legacy/                  # Raw Kubernetes manifests
+legacy/                    # Older experiments
+```
+
+## Development
+
+Run tests before submitting changes:
+
+```sh
+go test ./...
+```
 
 ## TODO
-1. Create a web interface to interact and receive output.
-2. Create new models.
+
+- Create a web interface to interact and receive output
+- Create new models
 

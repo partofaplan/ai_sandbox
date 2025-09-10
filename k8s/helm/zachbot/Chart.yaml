@@ -1,0 +1,5 @@
+apiVersion: v2
+name: zachbot
+version: 0.1.0
+appVersion: "v0.21"
+description: Helm chart for Zachbot and its dependencies

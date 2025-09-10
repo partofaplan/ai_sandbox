@@ -1,0 +1,15 @@
+{{- if .Values.ollama.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "zachbot.fullname" . }}-ollama
+spec:
+  type: {{ .Values.ollama.service.type }}
+  selector:
+    app: {{ include "zachbot.fullname" . }}-ollama
+  ports:
+    - name: http
+      port: {{ .Values.ollama.service.port }}
+      targetPort: 11434
+      protocol: TCP
+{{- end }}
