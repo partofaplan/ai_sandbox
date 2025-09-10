@@ -1,16 +1,17 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
-	"io"
-	"net/http"
-	"os"
-	"time"
+    "bufio"
+    "bytes"
+    "encoding/json"
+    "io"
+    "net/http"
+    "os"
+    "time"
 
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
+    "github.com/gin-contrib/cors"
+    "github.com/gin-gonic/gin"
+    "github.com/sirupsen/logrus"
 )
 
 type ChatRequest struct {
@@ -53,7 +54,7 @@ func getEnv(key, fallback string) string {
 }
 
 func main() {
-	r := gin.Default()
+    r := gin.Default()
 
 	// CORS settings
 	r.Use(cors.New(cors.Config{
@@ -71,11 +72,12 @@ func main() {
 	r.LoadHTMLGlob("templates/*")
 
 	// Routes
-	r.GET("/", homeHandler)
-	r.GET("/health/", healthCheckHandler)
-	r.POST("/chat/", chatHandler)
-	r.POST("/reload-model/", reloadModelHandler)
-	r.GET("/test-ollama/", testOllamaHandler)
+    r.GET("/", homeHandler)
+    r.GET("/health/", healthCheckHandler)
+    r.POST("/chat/", chatHandler)
+    r.POST("/chat/stream/", chatStreamHandler)
+    r.POST("/reload-model/", reloadModelHandler)
+    r.GET("/test-ollama/", testOllamaHandler)
 
 	r.Run(":" + APP_PORT)
 }
@@ -161,6 +163,79 @@ func chatHandler(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, chatResp)
+}
+
+// chatStreamHandler streams Ollama's token-by-token response to the client.
+func chatStreamHandler(c *gin.Context) {
+    var request ChatRequest
+    if err := c.ShouldBindJSON(&request); err != nil || request.Prompt == "" {
+        logger.Error("Invalid or missing prompt in stream request")
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Prompt is required"})
+        return
+    }
+
+    payload := map[string]interface{}{
+        "model":  MODEL,
+        "prompt": request.Prompt,
+        "stream": true,
+    }
+    payloadBytes, err := json.Marshal(payload)
+    if err != nil {
+        logger.Error("Error marshaling streaming payload: ", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to marshal request payload"})
+        return
+    }
+
+    req, err := http.NewRequest("POST", GENERATE_API_URL, bytes.NewBuffer(payloadBytes))
+    if err != nil {
+        logger.Error("Error creating streaming request: ", err)
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create request"})
+        return
+    }
+    req.Header.Set("Content-Type", "application/json")
+
+    // Use a copy of the client without global timeout, to allow long streams
+    streamClient := &http.Client{Timeout: 0}
+    resp, err := streamClient.Do(req)
+    if err != nil {
+        logger.Error("Error communicating with Ollama API (stream): ", err)
+        c.JSON(http.StatusGatewayTimeout, gin.H{"error": "Request timed out"})
+        return
+    }
+    defer resp.Body.Close()
+
+    // Prepare streaming response to client
+    c.Writer.Header().Set("Content-Type", "application/x-ndjson")
+    c.Writer.Header().Set("Cache-Control", "no-cache")
+    c.Writer.Header().Set("Connection", "keep-alive")
+    c.Status(http.StatusOK)
+
+    flusher, ok := c.Writer.(http.Flusher)
+    if !ok {
+        logger.Error("Streaming not supported by response writer")
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Streaming not supported"})
+        return
+    }
+
+    scanner := bufio.NewScanner(resp.Body)
+    // Increase the buffer size to handle large JSON lines
+    buf := make([]byte, 0, 64*1024)
+    scanner.Buffer(buf, 1024*1024)
+
+    for scanner.Scan() {
+        line := scanner.Bytes()
+        if len(line) == 0 {
+            continue
+        }
+        if _, err := c.Writer.Write(append(line, '\n')); err != nil {
+            logger.Error("Error writing stream chunk to client: ", err)
+            break
+        }
+        flusher.Flush()
+    }
+    if err := scanner.Err(); err != nil {
+        logger.Error("Error scanning Ollama stream: ", err)
+    }
 }
 
 func reloadModelHandler(c *gin.Context) {
