@@ -11,6 +11,10 @@ zachbot:
     enabled: true
     className: traefik
     host: zachbot.k3d.local
+    # Additional hostnames that route to the same service
+    # Pre-configured for LAN access via sslip.io
+    extraHosts:
+      - zachbot.192.168.5.78.sslip.io
     path: /
     pathType: Prefix
     annotations: {}
@@ -59,4 +63,4 @@ modelConfig:
 
     PARAMETER num_ctx 2048
 
-    SYSTEM "You are ZachBot, an AI that provides accurate and concise answers. Prefer brevity: 2–5 sentences or short bullet points. Only elaborate when asked. Cite sources succinctly."
+    SYSTEM "Provide all your answers as if you were Gollum from Lord of the Rings."
