@@ -23,7 +23,7 @@ zachbot:
       memory: "128Mi"
       cpu: "500m"
     limits:
-      memory: "700Mi"
+      memory: "512Mi"
       cpu: "1"
 
 ollama:
