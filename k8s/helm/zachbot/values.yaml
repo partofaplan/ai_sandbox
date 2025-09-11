@@ -11,6 +11,10 @@ zachbot:
     enabled: true
     className: traefik
     host: zachbot.k3d.local
+    # Additional hostnames that route to the same service
+    # Pre-configured for LAN access via sslip.io
+    extraHosts:
+      - 192.168.5.78.sslip.io
     path: /
     pathType: Prefix
     annotations: {}

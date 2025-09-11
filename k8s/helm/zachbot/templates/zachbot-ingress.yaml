@@ -20,4 +20,16 @@ spec:
                 name: {{ include "zachbot.fullname" . }}
                 port:
                   number: {{ .Values.zachbot.service.port }}
+    {{- range .Values.zachbot.ingress.extraHosts }}
+    - host: {{ . | quote }}
+      http:
+        paths:
+          - path: {{ $.Values.zachbot.ingress.path }}
+            pathType: {{ $.Values.zachbot.ingress.pathType }}
+            backend:
+              service:
+                name: {{ include "zachbot.fullname" $ }}
+                port:
+                  number: {{ $.Values.zachbot.service.port }}
+    {{- end }}
 {{- end }}
