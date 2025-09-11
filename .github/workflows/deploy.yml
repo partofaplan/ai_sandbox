@@ -31,8 +31,6 @@ jobs:
           RANCHER_SERVER_URL: ${{ secrets.RANCHER_SERVER_URL }}
           RANCHER_CLUSTER_ID: ${{ secrets.RANCHER_CLUSTER_ID }}
           RANCHER_BEARER_TOKEN: ${{ secrets.RANCHER_BEARER_TOKEN }}
-          RANCHER_INSECURE_SKIP_TLS_VERIFY: ${{ secrets.RANCHER_INSECURE_SKIP_TLS_VERIFY }}
-          RANCHER_CA_CRT: ${{ secrets.RANCHER_CA_CRT }}
         run: |
           set -euo pipefail
           if [ -z "${RANCHER_SERVER_URL:-}" ] || [ -z "${RANCHER_CLUSTER_ID:-}" ] || [ -z "${RANCHER_BEARER_TOKEN:-}" ]; then
@@ -43,21 +41,8 @@ jobs:
           K8S_SERVER="$API_BASE/k8s/clusters/${RANCHER_CLUSTER_ID}"
           KCFG_PATH="$RUNNER_TEMP/kubeconfig"
           export KUBECONFIG="$KCFG_PATH"
-          # Normalize boolean and configure cluster with either CA cert or insecure skip verify
-          _skip_raw="${RANCHER_INSECURE_SKIP_TLS_VERIFY:-}"
-          _skip_norm=$(printf '%s' "$_skip_raw" | tr -d '"' | tr '[:upper:]' '[:lower:]')
-          if [ -n "${RANCHER_CA_CRT:-}" ]; then
-            CA_PATH="$RUNNER_TEMP/rancher-ca.crt"
-            printf '%s' "$RANCHER_CA_CRT" > "$CA_PATH"
-            kubectl config set-cluster rancher --server="$K8S_SERVER" --certificate-authority="$CA_PATH" --embed-certs=true
-          else
-            if [ "$_skip_norm" = "true" ] || [ "$_skip_norm" = "1" ] || [ "$_skip_norm" = "yes" ] || [ "$_skip_norm" = "y" ] || [ "$_skip_norm" = "on" ]; then
-              kubectl config set-cluster rancher --server="$K8S_SERVER" --insecure-skip-tls-verify=true
-            else
-              # Default to insecure skip verify off; without CA this may fail TLS.
-              kubectl config set-cluster rancher --server="$K8S_SERVER" --insecure-skip-tls-verify=false || true
-            fi
-          fi
+          # Hardcode to skip TLS verification (user requested)
+          kubectl config set-cluster rancher --server="$K8S_SERVER" --insecure-skip-tls-verify=true
           kubectl config set-credentials rancher-user --token="$RANCHER_BEARER_TOKEN"
           kubectl config set-context rancher-ctx --cluster=rancher --user=rancher-user
           kubectl config use-context rancher-ctx
