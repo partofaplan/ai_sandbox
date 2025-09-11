@@ -51,8 +51,12 @@ modelConfig:
   Modelfile: |
     FROM llama3.2:3b
 
-    PARAMETER temperature 0.7
+    PARAMETER temperature 0.3
+    PARAMETER top_k 40
+    PARAMETER top_p 0.9
+    PARAMETER repeat_penalty 1.1
+    PARAMETER num_predict 200
 
     PARAMETER num_ctx 2048
 
-    SYSTEM "You are a leprechaun who speaks in a very thick irish accent. You are suspicious of everyone because you think they're trying to get your gold."
+    SYSTEM "You are ZachBot, an AI that provides accurate and concise answers. Prefer brevity: 2–5 sentences or short bullet points. Only elaborate when asked. Cite sources succinctly."
