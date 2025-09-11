@@ -28,24 +28,17 @@ jobs:
 
       - name: Configure kubeconfig
         env:
-          RANCHER_SERVER_URL: ${{ secrets.RANCHER_SERVER_URL }}
-          RANCHER_CLUSTER_ID: ${{ secrets.RANCHER_CLUSTER_ID }}
-          RANCHER_BEARER_TOKEN: ${{ secrets.RANCHER_BEARER_TOKEN }}
+          RUNNER_KUBECONFIG: ${{ secrets.RUNNER_KUBECONFIG }}
         run: |
           set -euo pipefail
-          if [ -z "${RANCHER_SERVER_URL:-}" ] || [ -z "${RANCHER_CLUSTER_ID:-}" ] || [ -z "${RANCHER_BEARER_TOKEN:-}" ]; then
-            echo "Missing Rancher configuration. Ensure RANCHER_SERVER_URL, RANCHER_CLUSTER_ID, and RANCHER_BEARER_TOKEN secrets are set (environment: dev)." >&2
+          if [ -z "${RUNNER_KUBECONFIG:-}" ]; then
+            echo "RUNNER_KUBECONFIG secret not set in environment: dev" >&2
             exit 1
           fi
-          API_BASE="${RANCHER_SERVER_URL%/}"
-          K8S_SERVER="$API_BASE/k8s/clusters/${RANCHER_CLUSTER_ID}"
           KCFG_PATH="$RUNNER_TEMP/kubeconfig"
-          export KUBECONFIG="$KCFG_PATH"
-          # Hardcode to skip TLS verification (user requested)
-          kubectl config set-cluster rancher --server="$K8S_SERVER" --insecure-skip-tls-verify=true
-          kubectl config set-credentials rancher-user --token="$RANCHER_BEARER_TOKEN"
-          kubectl config set-context rancher-ctx --cluster=rancher --user=rancher-user
-          kubectl config use-context rancher-ctx
+          # Write kubeconfig content from secret as-is
+          printf '%s' "$RUNNER_KUBECONFIG" > "$KCFG_PATH"
+          chmod 600 "$KCFG_PATH"
           echo "KUBECONFIG=$KCFG_PATH" >> "$GITHUB_ENV"
 
       - name: Show cluster info (sanity)
