@@ -176,10 +176,14 @@ async function init() {
     }
   });
 
+  // On focus, ensure latest messages are visible above keyboard on mobile
+  input.addEventListener('focus', () => {
+    setTimeout(scrollToBottom, 100);
+  });
+
   reloadBtn?.addEventListener('click', reloadModel);
 }
 
 window.ChatUI = { addAssistantMessage };
 
 window.addEventListener('DOMContentLoaded', init);
-
