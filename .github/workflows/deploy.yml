@@ -1,0 +1,51 @@
+name: Deploy Zachbot via Helm
+
+on:
+  push:
+    paths:
+      - 'k8s/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: [alpha]
+    permissions:
+      contents: read
+    env:
+      KUBECONFIG: ${{ runner.temp }}/kubeconfig
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: latest
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: latest
+
+      - name: Configure kubeconfig
+        run: |
+          if [ -z "${KUBE_CONFIG_DATA}" ]; then
+            echo "KUBE_CONFIG_DATA secret is not set" >&2
+            exit 1
+          fi
+          echo "${KUBE_CONFIG_DATA}" | base64 --decode > "$KUBECONFIG"
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
+
+      - name: Show cluster info (sanity)
+        run: |
+          kubectl version --client
+          kubectl cluster-info
+
+      - name: Deploy/Upgrade Helm release
+        run: |
+          helm upgrade --install zachbot k8s/helm/zachbot \
+            --namespace zachbot --create-namespace \
+            --values k8s/helm/zachbot/values.yaml \
+            --wait --timeout 5m
+
