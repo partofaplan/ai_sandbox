@@ -26,20 +26,7 @@ jobs:
         with:
           version: latest
 
-      - name: Configure kubeconfig
-        env:
-          RUNNER_KUBECONFIG: ${{ secrets.RUNNER_KUBECONFIG }}
-        run: |
-          set -euo pipefail
-          if [ -z "${RUNNER_KUBECONFIG:-}" ]; then
-            echo "RUNNER_KUBECONFIG secret not set in environment: dev" >&2
-            exit 1
-          fi
-          KCFG_PATH="$RUNNER_TEMP/kubeconfig"
-          # Write kubeconfig content from secret as-is
-          printf '%s' "$RUNNER_KUBECONFIG" > "$KCFG_PATH"
-          chmod 600 "$KCFG_PATH"
-          echo "KUBECONFIG=$KCFG_PATH" >> "$GITHUB_ENV"
+      # Kubeconfig is preloaded on the runner at $HOME/.kube/config
 
       - name: Show cluster info (sanity)
         run: |
