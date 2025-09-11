@@ -49,7 +49,7 @@ ollama:
       - "true"
 modelConfig:
   Modelfile: |
-    FROM llama3.2:7b
+    FROM llama3.2:3b
 
     PARAMETER temperature 0.3
     PARAMETER top_k 40
