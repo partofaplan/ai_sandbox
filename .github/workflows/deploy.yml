@@ -46,23 +46,12 @@ jobs:
           fi
           echo "Requesting kubeconfig from Rancher…"
           RESP=$(curl "${CURL_OPTS[@]}" "$API_URL")
-          # Extract the kubeconfig YAML from the JSON response's `config` field safely using Python
+          # Extract kubeconfig YAML from JSON `config` with inline Python
           KCFG_PATH="$RUNNER_TEMP/kubeconfig"
-          RESP_FILE="$RUNNER_TEMP/rancher_kcfg_resp.json"
-          printf '%s' "$RESP" > "$RESP_FILE"
-          python3 - "$KCFG_PATH" "$RESP_FILE" <<'PY'
-import json, sys
-out, src = sys.argv[1], sys.argv[2]
-with open(src, 'r') as f:
-    data = json.load(f)
-cfg = data.get('config')
-if not cfg:
-    sys.stderr.write('Failed to obtain kubeconfig from Rancher response.\n')
-    sys.exit(2)
-with open(out, 'w') as f:
-    f.write(cfg)
-print('Wrote kubeconfig to %s' % out)
-PY
+          python3 -c 'import json,sys; d=json.load(sys.stdin); c=d.get("config");
+import sys
+sys.stderr.write("Failed to obtain kubeconfig from Rancher response.\n") or sys.exit(2) if not c else sys.stdout.write(c)' \
+            <<< "$RESP" > "$KCFG_PATH"
           echo "KUBECONFIG=$KCFG_PATH" >> "$GITHUB_ENV"
 
       - name: Show cluster info (sanity)
