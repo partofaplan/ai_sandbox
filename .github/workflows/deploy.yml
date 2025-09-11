@@ -11,8 +11,6 @@ jobs:
     runs-on: [alpha]
     permissions:
       contents: read
-    env:
-      KUBECONFIG: ${{ runner.temp }}/kubeconfig
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,7 +31,9 @@ jobs:
             echo "KUBE_CONFIG_DATA secret is not set" >&2
             exit 1
           fi
-          echo "${KUBE_CONFIG_DATA}" | base64 --decode > "$KUBECONFIG"
+          KCFG_PATH="$RUNNER_TEMP/kubeconfig"
+          echo "${KUBE_CONFIG_DATA}" | base64 --decode > "$KCFG_PATH"
+          echo "KUBECONFIG=$KCFG_PATH" >> "$GITHUB_ENV"
         env:
           KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
 
@@ -48,4 +48,3 @@ jobs:
             --namespace zachbot --create-namespace \
             --values k8s/helm/zachbot/values.yaml \
             --wait --timeout 5m
-
