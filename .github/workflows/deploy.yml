@@ -9,6 +9,7 @@ on:
 jobs:
   deploy:
     runs-on: [alpha]
+    environment: dev
     permissions:
       contents: read
     steps:
@@ -26,16 +27,43 @@ jobs:
           version: latest
 
       - name: Configure kubeconfig
+        env:
+          RANCHER_SERVER_URL: ${{ secrets.RANCHER_SERVER_URL }}
+          RANCHER_CLUSTER_ID: ${{ secrets.RANCHER_CLUSTER_ID }}
+          RANCHER_BEARER_TOKEN: ${{ secrets.RANCHER_BEARER_TOKEN }}
+          RANCHER_INSECURE_SKIP_TLS_VERIFY: ${{ secrets.RANCHER_INSECURE_SKIP_TLS_VERIFY }}
         run: |
-          if [ -z "${KUBE_CONFIG_DATA}" ]; then
-            echo "KUBE_CONFIG_DATA secret is not set" >&2
+          set -euo pipefail
+          if [ -z "${RANCHER_SERVER_URL:-}" ] || [ -z "${RANCHER_CLUSTER_ID:-}" ] || [ -z "${RANCHER_BEARER_TOKEN:-}" ]; then
+            echo "Missing Rancher configuration. Ensure RANCHER_SERVER_URL, RANCHER_CLUSTER_ID, and RANCHER_BEARER_TOKEN secrets are set (environment: dev)." >&2
             exit 1
           fi
+          API_BASE="${RANCHER_SERVER_URL%/}"
+          API_URL="$API_BASE/v3/clusters/${RANCHER_CLUSTER_ID}?action=generateKubeconfig"
+          CURL_OPTS=("-sS" "-X" "POST" "-H" "Authorization: Bearer ${RANCHER_BEARER_TOKEN}" "-H" "Content-Type: application/json")
+          if [ "${RANCHER_INSECURE_SKIP_TLS_VERIFY:-false}" = "true" ]; then
+            CURL_OPTS+=("-k")
+          fi
+          echo "Requesting kubeconfig from Rancher…"
+          RESP=$(curl "${CURL_OPTS[@]}" "$API_URL")
+          # Extract the kubeconfig YAML from the JSON response's `config` field safely using Python
           KCFG_PATH="$RUNNER_TEMP/kubeconfig"
-          echo "${KUBE_CONFIG_DATA}" | base64 --decode > "$KCFG_PATH"
+          RESP_FILE="$RUNNER_TEMP/rancher_kcfg_resp.json"
+          printf '%s' "$RESP" > "$RESP_FILE"
+          python3 - "$KCFG_PATH" "$RESP_FILE" <<'PY'
+import json, sys
+out, src = sys.argv[1], sys.argv[2]
+with open(src, 'r') as f:
+    data = json.load(f)
+cfg = data.get('config')
+if not cfg:
+    sys.stderr.write('Failed to obtain kubeconfig from Rancher response.\n')
+    sys.exit(2)
+with open(out, 'w') as f:
+    f.write(cfg)
+print('Wrote kubeconfig to %s' % out)
+PY
           echo "KUBECONFIG=$KCFG_PATH" >> "$GITHUB_ENV"
-        env:
-          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_DATA }}
 
       - name: Show cluster info (sanity)
         run: |
