@@ -14,7 +14,7 @@ zachbot:
     # Additional hostnames that route to the same service
     # Pre-configured for LAN access via sslip.io
     extraHosts:
-      - 192.168.5.78.sslip.io
+      - zachbot.192.168.5.78.sslip.io
     path: /
     pathType: Prefix
     annotations: {}
