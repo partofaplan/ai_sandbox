@@ -2,7 +2,7 @@ zachbot:
   replicaCount: 1
   image:
     repository: partofaplan/zachbot-go
-    tag: v0.22
+    tag: v0.24
     pullPolicy: IfNotPresent
   service:
     type: ClusterIP

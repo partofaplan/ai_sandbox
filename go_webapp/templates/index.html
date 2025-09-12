@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0f14" />
     <title>Zachbot</title>
     <link rel="stylesheet" href="/static/css/style.css" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,7 +32,9 @@
 
         <footer class="composer">
             <form id="composer-form" class="composer-form" autocomplete="off">
-                <input id="user-input" class="input" type="text" placeholder="Ask me anything..." />
+                <input id="user-input" class="input" type="text" placeholder="Ask me anything..."
+                       inputmode="text" enterkeyhint="send" autocomplete="off"
+                       autocapitalize="sentences" autocorrect="on" spellcheck="true" />
                 <button id="send-btn" class="btn btn-primary" type="submit">Send</button>
             </form>
             <div id="status-indicator" class="status"></div>
