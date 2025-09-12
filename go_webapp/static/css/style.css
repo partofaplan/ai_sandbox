@@ -156,6 +156,7 @@ body {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 8px;
+  align-items: center; /* prevent vertical stretch of button */
 }
 .input {
   height: 48px;
@@ -166,6 +167,7 @@ body {
   color: var(--text);
   font-size: 16px; /* prevent iOS zoom */
 }
+.composer-form .btn { height: 48px; display: inline-flex; align-items: center; }
 .input:focus { outline: 2px solid #1e3a5f; }
 
 .status { color: var(--muted); font-size: 12px; text-align: right; padding: 0 4px; }
