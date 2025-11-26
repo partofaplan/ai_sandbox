@@ -38,6 +38,11 @@ The application can be configured via environment variables:
 | `OLLAMA_HOST`  | `ollama`           | Hostname of the Ollama service           |
 | `OLLAMA_PORT`  | `11434`            | Port of the Ollama service               |
 | `OLLAMA_MODEL` | `prospector:latest`| Model name used for chat requests        |
+| `OLLAMA_RELOAD_NAME` | `prospector` | Model name to rebuild when reloading     |
+| `OLLAMA_RELOAD_PATH` | `/root/models/Modelfile` | Path to the Modelfile in the Ollama container |
+| `CORS_ALLOW_ORIGINS` | `*;http://localhost:6600` | Semi-colon or comma separated allow list for CORS |
+| `STATIC_DIR` | `static` | Directory from which to serve static assets |
+| `TEMPLATE_DIR` | `templates` | Directory from which to load HTML templates |
 
 ## Helm deployment
 
@@ -86,4 +91,3 @@ go test ./...
 
 - Create a web interface to interact and receive output
 - Create new models
-

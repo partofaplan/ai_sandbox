@@ -10,10 +10,11 @@ zachbot:
   ingress:
     enabled: true
     className: traefik
-    host: zachbot.k3d.local
+    host: zachbot.k3d.localhost
     # Additional hostnames that route to the same service
     # Pre-configured for LAN access via sslip.io
     extraHosts:
+      - zachbot.k3d.local
       - zachbot.192.168.5.78.sslip.io
     path: /
     pathType: Prefix
@@ -42,7 +43,7 @@ ollama:
   ingress:
     enabled: true
     className: traefik
-    host: ollama.k3d.local
+    host: ollama.k3d.localhost
     path: /
     pathType: Prefix
     annotations: {}
