@@ -57,13 +57,11 @@ func (s *Server) Router() *gin.Engine {
 	return s.router
 }
 
-type chatRequest struct {
-	Prompt string `json:"prompt"`
-}
-
 func (s *Server) registerRoutes() {
 	s.router.GET("/", s.homeHandler)
 	s.router.GET("/health/", s.healthCheckHandler)
+	s.router.GET("/models/", s.modelsHandler)
+	s.router.GET("/models", s.modelsHandler)
 	s.router.POST("/chat/", s.chatHandler)
 	s.router.POST("/chat/stream/", s.chatStreamHandler)
 	s.router.POST("/reload-model/", s.reloadModelHandler)
@@ -86,14 +84,14 @@ func (s *Server) healthCheckHandler(c *gin.Context) {
 }
 
 func (s *Server) chatHandler(c *gin.Context) {
-	var req chatRequest
+	var req ollama.ChatRequest
 	if err := c.ShouldBindJSON(&req); err != nil || strings.TrimSpace(req.Prompt) == "" {
 		s.logger.Error("Invalid or missing prompt in request")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Prompt is required"})
 		return
 	}
 
-	resp, err := s.client.Generate(c.Request.Context(), req.Prompt)
+	resp, err := s.client.Generate(c.Request.Context(), req)
 	if err != nil {
 		s.logger.WithError(err).Error("Error communicating with Ollama API")
 		c.JSON(http.StatusBadGateway, gin.H{"error": "Failed to reach Ollama"})
@@ -104,7 +102,7 @@ func (s *Server) chatHandler(c *gin.Context) {
 }
 
 func (s *Server) chatStreamHandler(c *gin.Context) {
-	var req chatRequest
+	var req ollama.ChatRequest
 	if err := c.ShouldBindJSON(&req); err != nil || strings.TrimSpace(req.Prompt) == "" {
 		s.logger.Error("Invalid or missing prompt in stream request")
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Prompt is required"})
@@ -123,7 +121,7 @@ func (s *Server) chatStreamHandler(c *gin.Context) {
 	c.Writer.Header().Set("Connection", "keep-alive")
 	c.Status(http.StatusOK)
 
-	if err := s.client.Stream(c.Request.Context(), req.Prompt, func(chunk ollama.StreamChunk) error {
+	if err := s.client.Stream(c.Request.Context(), req, func(chunk ollama.StreamChunk) error {
 		b, err := json.Marshal(chunk)
 		if err != nil {
 			return err
@@ -155,4 +153,33 @@ func (s *Server) testOllamaHandler(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"status": "success", "response": body})
+}
+
+func (s *Server) modelsHandler(c *gin.Context) {
+	body, err := s.client.Tags(c.Request.Context())
+	if err != nil {
+		s.logger.WithError(err).Error("Failed to fetch models from Ollama")
+		c.JSON(http.StatusBadGateway, gin.H{"error": "Failed to fetch models"})
+		return
+	}
+
+	var parsed struct {
+		Models []struct {
+			Name string `json:"name"`
+		} `json:"models"`
+	}
+	if err := json.Unmarshal([]byte(body), &parsed); err != nil {
+		s.logger.WithError(err).Warn("Failed to parse model list; returning raw string")
+		c.JSON(http.StatusOK, gin.H{"models": []string{body}})
+		return
+	}
+
+	names := make([]string, 0, len(parsed.Models))
+	for _, m := range parsed.Models {
+		if trimmed := strings.TrimSpace(m.Name); trimmed != "" {
+			names = append(names, trimmed)
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{"models": names})
 }

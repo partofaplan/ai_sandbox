@@ -31,11 +31,11 @@ type fakeClient struct {
 	tagsErr  error
 }
 
-func (f *fakeClient) Generate(ctx context.Context, prompt string) (ollama.ChatResponse, error) {
+func (f *fakeClient) Generate(ctx context.Context, req ollama.ChatRequest) (ollama.ChatResponse, error) {
 	return f.generateResp, f.generateErr
 }
 
-func (f *fakeClient) Stream(ctx context.Context, prompt string, onChunk func(ollama.StreamChunk) error) error {
+func (f *fakeClient) Stream(ctx context.Context, req ollama.ChatRequest, onChunk func(ollama.StreamChunk) error) error {
 	for _, chunk := range f.streamChunks {
 		if err := onChunk(chunk); err != nil {
 			return err
@@ -180,5 +180,30 @@ func TestReloadModelHandler(t *testing.T) {
 
 	if w.Code != http.StatusOK {
 		t.Fatalf("expected 200, got %d", w.Code)
+	}
+}
+
+func TestModelsHandler(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	tags := `{"models":[{"name":"a"},{"name":"b"}]}`
+	srv := newTestServer(&fakeClient{tagsResp: tags})
+
+	req := httptest.NewRequest(http.MethodGet, "/models/", nil)
+	w := httptest.NewRecorder()
+
+	srv.Router().ServeHTTP(w, req)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", w.Code)
+	}
+
+	var resp struct {
+		Models []string `json:"models"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if len(resp.Models) != 2 || resp.Models[0] != "a" || resp.Models[1] != "b" {
+		t.Fatalf("unexpected models: %+v", resp.Models)
 	}
 }

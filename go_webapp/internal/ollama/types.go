@@ -4,7 +4,9 @@ import "context"
 
 // ChatRequest represents the payload coming from Zachbot's API consumers.
 type ChatRequest struct {
-	Prompt string `json:"prompt"`
+	Prompt  string `json:"prompt"`
+	Model   string `json:"model,omitempty"`
+	Persona string `json:"persona,omitempty"`
 }
 
 // ChatResponse mirrors the response emitted by the Ollama generate endpoint.
@@ -20,8 +22,8 @@ type StreamChunk struct {
 
 // Client abstracts the Ollama API surface that Zachbot needs.
 type Client interface {
-	Generate(ctx context.Context, prompt string) (ChatResponse, error)
-	Stream(ctx context.Context, prompt string, onChunk func(StreamChunk) error) error
+	Generate(ctx context.Context, req ChatRequest) (ChatResponse, error)
+	Stream(ctx context.Context, req ChatRequest, onChunk func(StreamChunk) error) error
 	ReloadModel(ctx context.Context) error
 	Tags(ctx context.Context) (string, error)
 }

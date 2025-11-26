@@ -47,19 +47,19 @@ func (c *HTTPClient) generateURL() string { return c.baseURL + "/api/generate" }
 func (c *HTTPClient) createURL() string   { return c.baseURL + "/api/create" }
 func (c *HTTPClient) tagsURL() string     { return c.baseURL + "/api/tags" }
 
-func (c *HTTPClient) Generate(ctx context.Context, prompt string) (ChatResponse, error) {
-	payload, err := c.marshalGeneratePayload(prompt, false)
+func (c *HTTPClient) Generate(ctx context.Context, req ChatRequest) (ChatResponse, error) {
+	payload, err := c.marshalGeneratePayload(req, false)
 	if err != nil {
 		return ChatResponse{}, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.generateURL(), bytes.NewReader(payload))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, c.generateURL(), bytes.NewReader(payload))
 	if err != nil {
 		return ChatResponse{}, fmt.Errorf("create generate request: %w", err)
 	}
-	req.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.httpClient.Do(httpReq)
 	if err != nil {
 		return ChatResponse{}, fmt.Errorf("call generate: %w", err)
 	}
@@ -77,19 +77,19 @@ func (c *HTTPClient) Generate(ctx context.Context, prompt string) (ChatResponse,
 	return out, nil
 }
 
-func (c *HTTPClient) Stream(ctx context.Context, prompt string, onChunk func(StreamChunk) error) error {
-	payload, err := c.marshalGeneratePayload(prompt, true)
+func (c *HTTPClient) Stream(ctx context.Context, req ChatRequest, onChunk func(StreamChunk) error) error {
+	payload, err := c.marshalGeneratePayload(req, true)
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.generateURL(), bytes.NewReader(payload))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, c.generateURL(), bytes.NewReader(payload))
 	if err != nil {
 		return fmt.Errorf("create stream request: %w", err)
 	}
-	req.Header.Set("Content-Type", "application/json")
+	httpReq.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.streamClient.Do(req)
+	resp, err := c.streamClient.Do(httpReq)
 	if err != nil {
 		return fmt.Errorf("call stream: %w", err)
 	}
@@ -179,9 +179,15 @@ func (c *HTTPClient) Tags(ctx context.Context) (string, error) {
 	return string(body), nil
 }
 
-func (c *HTTPClient) marshalGeneratePayload(prompt string, stream bool) ([]byte, error) {
+func (c *HTTPClient) marshalGeneratePayload(req ChatRequest, stream bool) ([]byte, error) {
+	prompt := formatPrompt(req.Prompt, req.Persona)
+	modelName := c.model
+	if strings.TrimSpace(req.Model) != "" {
+		modelName = strings.TrimSpace(req.Model)
+	}
+
 	payload := map[string]interface{}{
-		"model":  c.model,
+		"model":  modelName,
 		"prompt": prompt,
 		"stream": stream,
 	}
@@ -190,6 +196,16 @@ func (c *HTTPClient) marshalGeneratePayload(prompt string, stream bool) ([]byte,
 		return nil, fmt.Errorf("marshal generate payload: %w", err)
 	}
 	return body, nil
+}
+
+func formatPrompt(prompt, persona string) string {
+	prompt = strings.TrimSpace(prompt)
+	persona = strings.TrimSpace(persona)
+	if persona == "" {
+		return prompt
+	}
+
+	return fmt.Sprintf("Persona: %s\n\nUser: %s", persona, prompt)
 }
 
 func readBody(r io.Reader) string {

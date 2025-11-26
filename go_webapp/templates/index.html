@@ -26,6 +26,26 @@
             <div class="indeterminate"></div>
         </div>
 
+        <section class="settings" aria-label="Chat settings">
+            <div class="setting">
+                <label for="model-select">Model</label>
+                <select id="model-select" class="input select">
+                    <option value="">Loading models…</option>
+                </select>
+            </div>
+            <div class="setting">
+                <div class="setting-row">
+                    <label for="persona-input">Persona (optional)</label>
+                    <label class="switch">
+                        <input type="checkbox" id="persona-toggle" />
+                        <span>Apply</span>
+                    </label>
+                </div>
+                <textarea id="persona-input" class="input textarea" rows="3"
+                          placeholder="E.g., Reply like a pirate or Keep answers concise"></textarea>
+            </div>
+        </section>
+
         <main id="chat" class="chat">
             <div id="chat-log" class="chat-log"></div>
         </main>

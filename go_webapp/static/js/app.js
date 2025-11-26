@@ -8,12 +8,16 @@ const sendBtn = $('#send-btn');
 const reloadBtn = $('#reload-btn');
 const statusEl = $('#status-indicator');
 const progress = $('#progress');
+const modelSelect = $('#model-select');
+const personaInput = $('#persona-input');
+const personaToggle = $('#persona-toggle');
 
 const API = {
   chat: '/chat/',
   chatStream: '/chat/stream/',
   reload: '/reload-model/',
   health: '/health/',
+  models: '/models/',
 };
 
 function el(tag, className, children = []) {
@@ -65,6 +69,43 @@ function showProgress(show) {
   progress.classList.toggle('hidden', !show);
 }
 
+async function loadModels() {
+  if (!modelSelect) return;
+  try {
+    const res = await fetch(API.models);
+    const data = await res.json();
+    const models = data?.models || [];
+    if (!Array.isArray(models) || models.length === 0) {
+      throw new Error('No models returned');
+    }
+    modelSelect.innerHTML = '';
+    for (const name of models) {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      modelSelect.appendChild(opt);
+    }
+    setStatus(`Loaded ${models.length} models`);
+    setTimeout(() => setStatus(''), 1500);
+  } catch (err) {
+    setStatus(`Model list failed: ${err.message}`);
+    modelSelect.innerHTML = '';
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = 'Unavailable';
+    modelSelect.appendChild(opt);
+  }
+}
+
+function currentPersona() {
+  if (!personaToggle?.checked) return '';
+  return personaInput?.value?.trim() || '';
+}
+
+function currentModel() {
+  return modelSelect?.value?.trim() || '';
+}
+
 async function reloadModel() {
   showProgress(true);
   setStatus('Reloading model...');
@@ -85,6 +126,8 @@ async function reloadModel() {
 async function sendMessage(text) {
   if (!text || !text.trim()) return;
   const prompt = text.trim();
+  const persona = currentPersona();
+  const model = currentModel();
 
   addUserMessage(prompt);
   input.value = '';
@@ -101,7 +144,7 @@ async function sendMessage(text) {
     const res = await fetch(API.chatStream, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt })
+      body: JSON.stringify({ prompt, persona, model })
     });
 
     if (!res.ok || !res.body) {
@@ -109,7 +152,7 @@ async function sendMessage(text) {
       const fallback = await fetch(API.chat, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt })
+        body: JSON.stringify({ prompt, persona, model })
       });
       const data = await fallback.json();
       if (!fallback.ok) throw new Error(data.error || 'Request failed');
@@ -182,6 +225,8 @@ async function init() {
   });
 
   reloadBtn?.addEventListener('click', reloadModel);
+
+  loadModels();
 }
 
 window.ChatUI = { addAssistantMessage };
