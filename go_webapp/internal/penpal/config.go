@@ -15,6 +15,9 @@ type Config struct {
 	PollInterval   time.Duration
 	DefaultModel   string
 	DefaultPersona string
+	Mode           string
+	HTTPPort       string
+	WebhookSecret  string
 }
 
 const (
@@ -25,6 +28,8 @@ const (
 	defaultPollInterval = "15s"
 	defaultModel        = "prospector:latest"
 	defaultPersona      = "Write a concise, friendly email reply."
+	defaultMode         = "poll"   // poll or webhook
+	defaultHTTPPort     = "8080"
 )
 
 func LoadConfig() Config {
@@ -39,6 +44,9 @@ func LoadConfig() Config {
 		PollInterval:   poll,
 		DefaultModel:   getenv("PENPAL_MODEL", defaultModel),
 		DefaultPersona: getenv("PENPAL_PERSONA", defaultPersona),
+		Mode:           getenv("PENPAL_MODE", defaultMode),
+		HTTPPort:       getenv("PENPAL_HTTP_PORT", defaultHTTPPort),
+		WebhookSecret:  getenv("PENPAL_WEBHOOK_SECRET", ""),
 	}
 }
 

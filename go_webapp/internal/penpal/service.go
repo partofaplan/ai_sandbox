@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/mail"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jordan-wright/email"
@@ -20,7 +21,9 @@ type Service struct {
 	client     ollama.Client
 	logger     *logrus.Logger
 	httpClient *http.Client
+	httpServer *http.Server
 	seen       map[string]struct{}
+	seenMu     sync.Mutex
 }
 
 func NewService(cfg Config, client ollama.Client, logger *logrus.Logger) *Service {
@@ -34,6 +37,39 @@ func NewService(cfg Config, client ollama.Client, logger *logrus.Logger) *Servic
 }
 
 func (s *Service) Run(ctx context.Context) error {
+	errCh := make(chan error, 2)
+
+	// start http server
+	go func() {
+		if err := s.startHTTP(); err != nil && err != http.ErrServerClosed {
+			errCh <- err
+		}
+	}()
+
+	if strings.EqualFold(s.cfg.Mode, "poll") {
+		go func() {
+			if err := s.runPoller(ctx); err != nil && err != context.Canceled {
+				errCh <- err
+			}
+		}()
+	} else {
+		s.logger.Infof("Penpal running in webhook mode on :%s", s.cfg.HTTPPort)
+	}
+
+	select {
+	case <-ctx.Done():
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if s.httpServer != nil {
+			_ = s.httpServer.Shutdown(shutdownCtx)
+		}
+		return ctx.Err()
+	case err := <-errCh:
+		return err
+	}
+}
+
+func (s *Service) runPoller(ctx context.Context) error {
 	ticker := time.NewTicker(s.cfg.PollInterval)
 	defer ticker.Stop()
 
@@ -62,18 +98,18 @@ func (s *Service) pollOnce(ctx context.Context) error {
 	}
 
 	for _, m := range msgs {
-		if _, processed := s.seen[m.ID]; processed {
+		if s.seenMessage(m.ID) {
 			continue
 		}
 		if strings.EqualFold(m.From.Address, s.cfg.FromAddress) {
-			s.seen[m.ID] = struct{}{}
+			s.markSeen(m.ID)
 			continue
 		}
 		if err := s.handleMessage(ctx, m); err != nil {
 			s.logger.WithError(err).Warnf("failed to handle message %s", m.ID)
 			continue
 		}
-		s.seen[m.ID] = struct{}{}
+		s.markSeen(m.ID)
 		_ = s.deleteMessage(ctx, m.ID)
 	}
 	return nil
@@ -108,6 +144,19 @@ func (s *Service) handleMessage(ctx context.Context, m MHMessage) error {
 	return nil
 }
 
+func (s *Service) seenMessage(id string) bool {
+	s.seenMu.Lock()
+	defer s.seenMu.Unlock()
+	_, ok := s.seen[id]
+	return ok
+}
+
+func (s *Service) markSeen(id string) {
+	s.seenMu.Lock()
+	defer s.seenMu.Unlock()
+	s.seen[id] = struct{}{}
+}
+
 func (s *Service) sendReply(msg MHMessage, reply string) error {
 	e := email.NewEmail()
 	e.From = s.cfg.FromAddress
@@ -120,6 +169,78 @@ func (s *Service) sendReply(msg MHMessage, reply string) error {
 		return fmt.Errorf("send mail: %w", err)
 	}
 	return nil
+}
+
+// HTTP server for webhook ingestion
+func (s *Service) startHTTP() error {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	mux.HandleFunc("/mail/inbound", s.handleInbound)
+
+	addr := ":" + s.cfg.HTTPPort
+	s.httpServer = &http.Server{
+		Addr:    addr,
+		Handler: mux,
+	}
+	s.logger.Infof("Penpal HTTP server listening on %s", addr)
+	return s.httpServer.ListenAndServe()
+}
+
+func (s *Service) handleInbound(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+	if secret := strings.TrimSpace(s.cfg.WebhookSecret); secret != "" {
+		if r.Header.Get("X-Penpal-Secret") != secret {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+	}
+
+	var payload struct {
+		From    string `json:"from"`
+		Subject string `json:"subject"`
+		Text    string `json:"text"`
+		Body    string `json:"body"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "bad request", http.StatusBadRequest)
+		return
+	}
+
+	from := strings.TrimSpace(payload.From)
+	if from == "" {
+		http.Error(w, "from required", http.StatusBadRequest)
+		return
+	}
+	addr, err := mail.ParseAddress(from)
+	if err != nil {
+		http.Error(w, "invalid from", http.StatusBadRequest)
+		return
+	}
+
+	body := strings.TrimSpace(payload.Text)
+	if body == "" {
+		body = strings.TrimSpace(payload.Body)
+	}
+
+	msg := MHMessage{
+		ID:      fmt.Sprintf("inbound-%d", time.Now().UnixNano()),
+		From:    addr,
+		Subject: payload.Subject,
+		Body:    body,
+	}
+
+	if err := s.handleMessage(r.Context(), msg); err != nil {
+		s.logger.WithError(err).Warn("failed to process inbound webhook")
+		http.Error(w, "processing failed", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func (s *Service) fetchMessages(ctx context.Context) ([]MHMessage, error) {

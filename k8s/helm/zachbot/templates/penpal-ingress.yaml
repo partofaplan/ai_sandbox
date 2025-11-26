@@ -1,0 +1,23 @@
+{{- if and .Values.penpal.enabled .Values.penpal.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "zachbot.fullname" . }}-penpal
+  {{- with .Values.penpal.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  ingressClassName: {{ .Values.penpal.ingress.className }}
+  rules:
+    - host: {{ .Values.penpal.ingress.host }}
+      http:
+        paths:
+          - path: {{ .Values.penpal.ingress.path }}
+            pathType: {{ .Values.penpal.ingress.pathType }}
+            backend:
+              service:
+                name: {{ include "zachbot.fullname" . }}-penpal
+                port:
+                  number: {{ .Values.penpal.http.port }}
+{{- end }}

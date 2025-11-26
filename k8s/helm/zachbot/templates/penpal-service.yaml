@@ -1,0 +1,14 @@
+{{- if .Values.penpal.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "zachbot.fullname" . }}-penpal
+spec:
+  selector:
+    app: {{ include "zachbot.fullname" . }}-penpal
+  ports:
+    - name: http
+      port: {{ .Values.penpal.http.port | int }}
+      targetPort: {{ .Values.penpal.http.port | int }}
+      protocol: TCP
+{{- end }}

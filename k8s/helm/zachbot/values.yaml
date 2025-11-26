@@ -68,6 +68,18 @@ penpal:
     PENPAL_SMTP_PORT: "1025"
     PENPAL_FROM: penpal@zachbot.local
     PENPAL_POLL_INTERVAL: 15s
+    PENPAL_MODE: poll # poll or webhook
+    PENPAL_HTTP_PORT: "8080"
+    PENPAL_WEBHOOK_SECRET: ""
+  http:
+    port: 8080
+  ingress:
+    enabled: false
+    className: traefik
+    host: penpal.k3d.localhost
+    path: /mail/inbound
+    pathType: Prefix
+    annotations: {}
   resources:
     requests:
       memory: "64Mi"
