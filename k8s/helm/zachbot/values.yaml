@@ -63,5 +63,3 @@ modelConfig:
     PARAMETER num_predict 200
 
     PARAMETER num_ctx 2048
-
-    SYSTEM "Provide all your answers as if you were Gollum from Lord of the Rings."

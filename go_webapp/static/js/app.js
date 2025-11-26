@@ -11,6 +11,11 @@ const progress = $('#progress');
 const modelSelect = $('#model-select');
 const personaInput = $('#persona-input');
 const personaToggle = $('#persona-toggle');
+const tabButtons = document.querySelectorAll('.tab-btn');
+const tabPanels = {
+  chat: document.getElementById('tab-chat'),
+  settings: document.getElementById('tab-settings'),
+};
 
 const API = {
   chat: '/chat/',
@@ -104,6 +109,27 @@ function currentPersona() {
 
 function currentModel() {
   return modelSelect?.value?.trim() || '';
+}
+
+function togglePersonaInput() {
+  const apply = personaToggle?.checked;
+  if (personaInput) {
+    personaInput.disabled = !apply;
+  }
+}
+
+function switchTab(name) {
+  tabButtons.forEach((btn) => {
+    const isActive = btn.dataset.tab === name;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  });
+  Object.entries(tabPanels).forEach(([key, panel]) => {
+    if (!panel) return;
+    const active = key === name;
+    panel.classList.toggle('active', active);
+    panel.hidden = !active;
+  });
 }
 
 async function reloadModel() {
@@ -227,6 +253,14 @@ async function init() {
   reloadBtn?.addEventListener('click', reloadModel);
 
   loadModels();
+
+  tabButtons.forEach((btn) => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+  if (personaToggle) {
+    personaToggle.addEventListener('change', togglePersonaInput);
+    togglePersonaInput();
+  }
 }
 
 window.ChatUI = { addAssistantMessage };

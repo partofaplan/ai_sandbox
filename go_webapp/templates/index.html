@@ -26,39 +26,48 @@
             <div class="indeterminate"></div>
         </div>
 
-        <section class="settings" aria-label="Chat settings">
-            <div class="setting">
-                <label for="model-select">Model</label>
-                <select id="model-select" class="input select">
-                    <option value="">Loading models…</option>
-                </select>
-            </div>
-            <div class="setting">
-                <div class="setting-row">
-                    <label for="persona-input">Persona (optional)</label>
-                    <label class="switch">
-                        <input type="checkbox" id="persona-toggle" />
-                        <span>Apply</span>
-                    </label>
-                </div>
-                <textarea id="persona-input" class="input textarea" rows="3"
-                          placeholder="E.g., Reply like a pirate or Keep answers concise"></textarea>
-            </div>
+        <div class="tabs" role="tablist">
+            <button class="tab-btn active" data-tab="chat" role="tab" aria-selected="true">Chat</button>
+            <button class="tab-btn" data-tab="settings" role="tab" aria-selected="false">Settings</button>
+        </div>
+
+        <section id="tab-chat" class="tab-panel active" role="tabpanel" aria-label="Chat">
+            <main id="chat" class="chat">
+                <div id="chat-log" class="chat-log"></div>
+            </main>
+
+            <footer class="composer">
+                <form id="composer-form" class="composer-form" autocomplete="off">
+                    <input id="user-input" class="input" type="text" placeholder="Ask me anything..."
+                           inputmode="text" enterkeyhint="send" autocomplete="off"
+                           autocapitalize="sentences" autocorrect="on" spellcheck="true" />
+                    <button id="send-btn" class="btn btn-primary" type="submit">Send</button>
+                </form>
+                <div id="status-indicator" class="status"></div>
+            </footer>
         </section>
 
-        <main id="chat" class="chat">
-            <div id="chat-log" class="chat-log"></div>
-        </main>
-
-        <footer class="composer">
-            <form id="composer-form" class="composer-form" autocomplete="off">
-                <input id="user-input" class="input" type="text" placeholder="Ask me anything..."
-                       inputmode="text" enterkeyhint="send" autocomplete="off"
-                       autocapitalize="sentences" autocorrect="on" spellcheck="true" />
-                <button id="send-btn" class="btn btn-primary" type="submit">Send</button>
-            </form>
-            <div id="status-indicator" class="status"></div>
-        </footer>
+        <section id="tab-settings" class="tab-panel" role="tabpanel" aria-label="Settings">
+            <div class="settings">
+                <div class="setting">
+                    <label for="model-select">Model</label>
+                    <select id="model-select" class="input select">
+                        <option value="">Loading models…</option>
+                    </select>
+                </div>
+                <div class="setting">
+                    <div class="setting-row">
+                        <label for="persona-input">Persona (optional)</label>
+                        <label class="switch">
+                            <input type="checkbox" id="persona-toggle" />
+                            <span>Apply</span>
+                        </label>
+                    </div>
+                    <textarea id="persona-input" class="input textarea" rows="3"
+                              placeholder="E.g., Reply like a pirate or Keep answers concise"></textarea>
+                </div>
+            </div>
+        </section>
     </div>
 
     <script src="/static/js/app.js"></script>
