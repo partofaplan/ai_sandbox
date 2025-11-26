@@ -16,8 +16,8 @@ RUN go mod download
 # Copy the rest of the application
 COPY . .
 
-# Build the application
-RUN go build -o zachbot
+# Build binaries
+RUN go build -o zachbot . && go build -o penpal ./cmd/penpal
 
 # Stage 2: Create a minimal runtime image
 FROM alpine:latest
@@ -30,6 +30,7 @@ WORKDIR /root/
 
 # Copy the compiled binary from the builder stage
 COPY --from=builder /app/zachbot .
+COPY --from=builder /app/penpal .
 
 # Copy templates and static files
 COPY --from=builder /app/templates ./templates

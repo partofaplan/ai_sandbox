@@ -1,0 +1,18 @@
+{{- if .Values.mailhog.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "zachbot.fullname" . }}-mailhog
+spec:
+  selector:
+    app: {{ include "zachbot.fullname" . }}-mailhog
+  ports:
+    - name: smtp
+      port: {{ .Values.mailhog.service.smtpPort }}
+      targetPort: {{ .Values.mailhog.service.smtpPort }}
+      protocol: TCP
+    - name: http
+      port: {{ .Values.mailhog.service.httpPort }}
+      targetPort: {{ .Values.mailhog.service.httpPort }}
+      protocol: TCP
+{{- end }}

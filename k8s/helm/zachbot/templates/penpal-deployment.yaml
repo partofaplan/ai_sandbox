@@ -1,0 +1,39 @@
+{{- if .Values.penpal.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "zachbot.fullname" . }}-penpal
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "zachbot.fullname" . }}-penpal
+  template:
+    metadata:
+      labels:
+        app: {{ include "zachbot.fullname" . }}-penpal
+    spec:
+      containers:
+        - name: penpal
+          image: "{{ .Values.penpal.image.repository }}:{{ .Values.penpal.image.tag }}"
+          imagePullPolicy: {{ .Values.penpal.image.pullPolicy }}
+          command: ["/root/penpal"]
+          env:
+            - name: OLLAMA_HOST
+              value: {{ .Values.penpal.env.OLLAMA_HOST | quote }}
+            - name: OLLAMA_PORT
+              value: {{ .Values.penpal.env.OLLAMA_PORT | quote }}
+            - name: PENPAL_MODEL
+              value: {{ .Values.penpal.env.PENPAL_MODEL | quote }}
+            - name: PENPAL_MAILHOG_API
+              value: {{ .Values.penpal.env.PENPAL_MAILHOG_API | quote }}
+            - name: PENPAL_SMTP_HOST
+              value: {{ .Values.penpal.env.PENPAL_SMTP_HOST | quote }}
+            - name: PENPAL_SMTP_PORT
+              value: {{ .Values.penpal.env.PENPAL_SMTP_PORT | quote }}
+            - name: PENPAL_FROM
+              value: {{ .Values.penpal.env.PENPAL_FROM | quote }}
+            - name: PENPAL_POLL_INTERVAL
+              value: {{ .Values.penpal.env.PENPAL_POLL_INTERVAL | quote }}
+          resources:
+{{ toYaml .Values.penpal.resources | indent 12 }}
+{{- end }}

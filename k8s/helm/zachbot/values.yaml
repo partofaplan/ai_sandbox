@@ -52,6 +52,46 @@ ollama:
     operator: NotIn
     values:
       - "true"
+
+penpal:
+  enabled: true
+  image:
+    repository: zachbot
+    tag: local
+    pullPolicy: IfNotPresent
+  env:
+    OLLAMA_HOST: zachbot-zachbot-ollama
+    OLLAMA_PORT: "80"
+    PENPAL_MODEL: prospector:latest
+    PENPAL_MAILHOG_API: http://zachbot-zachbot-mailhog:8025
+    PENPAL_SMTP_HOST: zachbot-zachbot-mailhog
+    PENPAL_SMTP_PORT: "1025"
+    PENPAL_FROM: penpal@zachbot.local
+    PENPAL_POLL_INTERVAL: 15s
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "200m"
+    limits:
+      memory: "256Mi"
+      cpu: "500m"
+
+mailhog:
+  enabled: true
+  image:
+    repository: mailhog/mailhog
+    tag: latest
+    pullPolicy: IfNotPresent
+  service:
+    smtpPort: 1025
+    httpPort: 8025
+  ingress:
+    enabled: true
+    className: traefik
+    host: mailhog.k3d.localhost
+    path: /
+    pathType: Prefix
+    annotations: {}
 modelConfig:
   Modelfile: |
     FROM llama3.2:3b

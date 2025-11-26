@@ -1,0 +1,24 @@
+{{- if .Values.mailhog.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "zachbot.fullname" . }}-mailhog
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "zachbot.fullname" . }}-mailhog
+  template:
+    metadata:
+      labels:
+        app: {{ include "zachbot.fullname" . }}-mailhog
+    spec:
+      containers:
+        - name: mailhog
+          image: "{{ .Values.mailhog.image.repository }}:{{ .Values.mailhog.image.tag }}"
+          imagePullPolicy: {{ .Values.mailhog.image.pullPolicy }}
+          ports:
+            - name: smtp
+              containerPort: {{ .Values.mailhog.service.smtpPort }}
+            - name: http
+              containerPort: {{ .Values.mailhog.service.httpPort }}
+{{- end }}

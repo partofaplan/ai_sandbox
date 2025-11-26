@@ -44,6 +44,20 @@ The application can be configured via environment variables:
 | `STATIC_DIR` | `static` | Directory from which to serve static assets |
 | `TEMPLATE_DIR` | `templates` | Directory from which to load HTML templates |
 
+### Penpal (email bot)
+
+Environment variables for the penpal service (defaults are set in the Helm chart):
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PENPAL_MAILHOG_API` | `http://mailhog:8025` | Mailhog API endpoint for fetching inbound mail |
+| `PENPAL_SMTP_HOST` | `mailhog` | SMTP host used to send replies |
+| `PENPAL_SMTP_PORT` | `1025` | SMTP port |
+| `PENPAL_FROM` | `penpal@zachbot.local` | From address used for replies |
+| `PENPAL_POLL_INTERVAL` | `15s` | How often to poll for new messages |
+| `PENPAL_MODEL` | `prospector:latest` | Default model used for replies |
+| `PENPAL_PERSONA` | `Write a concise, friendly email reply.` | Default persona injected into replies |
+
 ## Helm deployment
 
 A Helm chart lives under `k8s/helm/zachbot` and deploys Zachbot alongside an Ollama instance.
