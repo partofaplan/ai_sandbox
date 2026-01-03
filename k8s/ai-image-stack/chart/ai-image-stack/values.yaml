@@ -1,0 +1,70 @@
+nameOverride: ""
+fullnameOverride: ""
+
+namespace:
+  create: false
+  name: ai-image-stack
+
+persistence:
+  enabled: true
+  name: ai-image-stack-data
+  accessModes:
+    - ReadWriteOnce
+  size: 20Gi
+  storageClassName: ""
+
+imageGen:
+  enabled: true
+  image: partofaplan/ai-image-gen-ui
+  tag: latest
+  pullPolicy: IfNotPresent
+  env:
+    MODEL_ID: stabilityai/sd-turbo
+    OUTPUT_DIR: /data/outputs
+    HF_HOME: /data/hf
+    GRADIO_SERVER_NAME: 0.0.0.0
+    GRADIO_SERVER_PORT: "7860"
+  resources:
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+  service:
+    port: 80
+    targetPort: 7860
+
+gallery:
+  enabled: true
+  image: partofaplan/ai-image-gallery
+  tag: latest
+  pullPolicy: IfNotPresent
+  env:
+    OUTPUT_DIR: /data/outputs
+    MAX_IMAGES: "200"
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+  service:
+    port: 80
+    targetPort: 8080
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: web
+  gen:
+    host: image-gen.local
+    path: /
+    pathType: Prefix
+  gallery:
+    enabled: true
+    host: image-gallery.local
+    path: /
+    pathType: Prefix

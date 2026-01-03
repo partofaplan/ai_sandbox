@@ -1,0 +1,54 @@
+{{- if .Values.gallery.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ai-image-stack.galleryName" . }}
+  labels:
+    {{- include "ai-image-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: image-gallery
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "ai-image-stack.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: image-gallery
+  template:
+    metadata:
+      labels:
+        {{- include "ai-image-stack.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: image-gallery
+    spec:
+      containers:
+        - name: ui
+          image: {{ .Values.gallery.image }}:{{ .Values.gallery.tag }}
+          imagePullPolicy: {{ .Values.gallery.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.gallery.service.targetPort }}
+          env:
+            {{- range $key, $value := .Values.gallery.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.gallery.resources | nindent 12 }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.name }}
+{{- end }}

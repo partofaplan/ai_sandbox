@@ -1,0 +1,54 @@
+{{- if .Values.imageGen.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "ai-image-stack.genName" . }}
+  labels:
+    {{- include "ai-image-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: image-gen-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "ai-image-stack.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: image-gen-ui
+  template:
+    metadata:
+      labels:
+        {{- include "ai-image-stack.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: image-gen-ui
+    spec:
+      containers:
+        - name: ui
+          image: {{ .Values.imageGen.image }}:{{ .Values.imageGen.tag }}
+          imagePullPolicy: {{ .Values.imageGen.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.imageGen.service.targetPort }}
+          env:
+            {{- range $key, $value := .Values.imageGen.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.imageGen.resources | nindent 12 }}
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.name }}
+{{- end }}

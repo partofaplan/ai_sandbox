@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-image-gallery
+  labels:
+    app: ai-image-gallery
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-image-gallery
+  template:
+    metadata:
+      labels:
+        app: ai-image-gallery
+    spec:
+      containers:
+        - name: ui
+          image: partofaplan/ai-image-gallery:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: OUTPUT_DIR
+              value: "/data/outputs"
+            - name: MAX_IMAGES
+              value: "200"
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: ai-image-stack-data

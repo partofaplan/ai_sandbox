@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ai-image-stack
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: image-gen.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ai-image-gen-ui
+                port:
+                  number: 80
+    - host: image-gallery.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ai-image-gallery
+                port:
+                  number: 80

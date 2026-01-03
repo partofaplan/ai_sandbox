@@ -1,0 +1,18 @@
+{{- if .Values.imageGen.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ai-image-stack.genName" . }}
+  labels:
+    {{- include "ai-image-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: image-gen-ui
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "ai-image-stack.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: image-gen-ui
+  ports:
+    - name: http
+      port: {{ .Values.imageGen.service.port }}
+      targetPort: {{ .Values.imageGen.service.targetPort }}
+{{- end }}

@@ -1,0 +1,24 @@
+{{- if and .Values.ingress.enabled .Values.gallery.enabled .Values.ingress.gallery.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "ai-image-stack.galleryName" . }}
+  labels:
+    {{- include "ai-image-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: image-gallery
+  annotations:
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    - host: {{ .Values.ingress.gallery.host }}
+      http:
+        paths:
+          - path: {{ .Values.ingress.gallery.path }}
+            pathType: {{ .Values.ingress.gallery.pathType }}
+            backend:
+              service:
+                name: {{ include "ai-image-stack.galleryName" . }}
+                port:
+                  number: {{ .Values.gallery.service.port }}
+{{- end }}

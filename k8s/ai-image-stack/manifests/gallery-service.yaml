@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-image-gallery
+  labels:
+    app: ai-image-gallery
+spec:
+  type: ClusterIP
+  selector:
+    app: ai-image-gallery
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

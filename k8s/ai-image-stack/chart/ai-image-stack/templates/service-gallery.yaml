@@ -1,0 +1,18 @@
+{{- if .Values.gallery.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "ai-image-stack.galleryName" . }}
+  labels:
+    {{- include "ai-image-stack.labels" . | nindent 4 }}
+    app.kubernetes.io/component: image-gallery
+spec:
+  type: ClusterIP
+  selector:
+    {{- include "ai-image-stack.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: image-gallery
+  ports:
+    - name: http
+      port: {{ .Values.gallery.service.port }}
+      targetPort: {{ .Values.gallery.service.targetPort }}
+{{- end }}
